@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 
-export function createWebviewPanel(context: vscode.ExtensionContext, title = "JSON Crack") {
+export function createWebviewPanel(context: vscode.ExtensionContext, title = "Policy Crack") {
   const extPath = context.extensionPath;
   const webviewDir = vscode.Uri.file(path.join(extPath, "build", "webview"));
 

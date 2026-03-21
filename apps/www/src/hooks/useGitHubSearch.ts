@@ -6,25 +6,16 @@ import useFile from "../store/useFile";
 import useJson from "../store/useJson";
 import { applyPolicyTransform, hasPolicyConditions } from "../lib/utils/policyTransform";
 
-const GITHUB_REPO = "corp-ais/sky-fbb-onboarding-common";
-const GITHUB_BRANCH = "master";
+// DEPRECATED: ใช้ config จาก policy store แทน
+// const GITHUB_REPO = "corp-ais/sky-fbb-onboarding-common";
+// const GITHUB_BRANCH = "master";
 
 // Known folder structure: config/Policy/{folder}/{code}.json
-// Some repos have a root-level prefix folder
 const POLICY_FOLDER_MAP: Record<string, string> = {
   PLSE: "Set",
   PLGP: "Group",
   PLRL: "Rule",
 };
-
-// Candidate base paths to try (in order)
-const BASE_PATHS = [
-  "onboarding_common/config/Policy",
-  "config/Policy",
-  "policy",
-  "policies",
-  "",
-];
 
 // Detect policy type from code prefix
 export const detectPolicyType = (value: string): string | null => {
@@ -52,16 +43,6 @@ export const extractPolicyCodes = (
   return [...new Set(codes)];
 };
 
-interface GitHubSearchResult {
-  name: string;
-  path: string;
-  sha: string;
-  url: string;
-  git_url: string;
-  html_url: string;
-  repository: { full_name: string };
-}
-
 interface GitHubFileContent {
   content: string; // base64
   encoding: string;
@@ -70,17 +51,20 @@ interface GitHubFileContent {
 }
 
 // Build the first candidate GitHub web URL for a policy code
-export const buildGitHubWebUrl = (code: string): string => {
+export const buildGitHubWebUrl = (code: string, repo?: string, branch?: string): string => {
+  const targetRepo = repo || "corp-ais/sky-fbb-onboarding-common";
+  const targetBranch = branch || "master";
   const prefix = code.slice(0, 4).toUpperCase();
   const folder = POLICY_FOLDER_MAP[prefix];
   const filePath = folder
-    ? `${BASE_PATHS[0]}/${folder}/${code}.json`
-    : `${BASE_PATHS[0]}/${code}.json`;
-  return `https://github.com/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${filePath}`;
+    ? `onboarding_activity/config/Policy/${folder}/${code}.json`
+    : `onboarding_activity/config/Policy/${code}.json`;
+  return `https://github.com/${targetRepo}/blob/${targetBranch}/${filePath}`;
 };
 
 const useGitHubSearch = () => {
   const token = useGitHub(state => state.token);
+  const policyConfig = useGitHub(state => state.policyConfig);
   const setContents = useFile(state => state.setContents);
   const getJson = useJson(state => state.getJson);
   const setJson = useJson(state => state.setJson);
@@ -97,8 +81,8 @@ const useGitHubSearch = () => {
 
   /** Try to fetch file content directly by a full path — returns file data or throws on auth errors */
   const tryFetchByPath = React.useCallback(
-    async (path: string): Promise<GitHubFileContent | null> => {
-      const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`;
+    async (repo: string, branch: string, path: string): Promise<GitHubFileContent | null> => {
+      const url = `https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`;
       const res = await fetch(url, { headers });
       if (res.status === 401) throw new Error("unauthorized");
       if (res.status === 403) throw new Error("rate_limit");
@@ -112,45 +96,18 @@ const useGitHubSearch = () => {
   );
 
   /** Build candidate direct paths for a policy code */
-  const buildCandidatePaths = (code: string): string[] => {
+  const buildCandidatePaths = (code: string, repoType: "activity" | "common"): string[] => {
     const prefix = code.slice(0, 4).toUpperCase();
     const folder = POLICY_FOLDER_MAP[prefix];
+    const basePath = repoType === "activity" ? "onboarding_activity/config/Policy" : "onboarding_common/config/Policy";
+    
     const paths: string[] = [];
-    for (const base of BASE_PATHS) {
-      if (folder) {
-        paths.push(
-          base ? `${base}/${folder}/${code}.json` : `${folder}/${code}.json`
-        );
-      }
-      // Also try without the type subfolder
-      paths.push(base ? `${base}/${code}.json` : `${code}.json`);
+    if (folder) {
+      paths.push(`${basePath}/${folder}/${code}.json`);
     }
+    paths.push(`${basePath}/${code}.json`);
     return paths;
   };
-
-  const searchByFilename = React.useCallback(
-    async (code: string): Promise<GitHubFileContent | null> => {
-      const q = `filename:${code}.json+repo:${GITHUB_REPO}`;
-      const searchUrl = `https://api.github.com/search/code?q=${q}&per_page=5`;
-      const res = await fetch(searchUrl, { headers });
-      if (!res.ok) {
-        if (res.status === 403) throw new Error("rate_limit");
-        if (res.status === 401) throw new Error("unauthorized");
-        return null;
-      }
-      const data = (await res.json()) as { total_count: number; items: GitHubSearchResult[] };
-      if (!data.items?.length) return null;
-
-      // Prefer exact filename match
-      const match =
-        data.items.find(
-          item => item.name.toUpperCase() === `${code.toUpperCase()}.json`
-        ) ?? data.items[0];
-
-      return tryFetchByPath(match.path);
-    },
-    [headers, tryFetchByPath]
-  );
 
   /**
    * Merge resolved JSON into the current graph at the clicked node's path.
@@ -199,32 +156,60 @@ const useGitHubSearch = () => {
         return;
       }
 
+      if (!policyConfig.productLine || !policyConfig.activity) {
+        toast.error("กรุณาตั้งค่า Product Line และ Activity ใน Policy Config ก่อน");
+        return;
+      }
+
       setSearching(true);
       const toastId = toast.loading(`กำลังค้นหา ${policyType}: ${value}...`);
 
       try {
         let fileData: GitHubFileContent | null = null;
+        let source = "";
 
-        // Strategy 1: try known direct paths (fastest, no rate-limit cost)
-        const candidates = buildCandidatePaths(value);
-        console.log("[GitHubSearch] Trying direct paths:", candidates);
-        for (const path of candidates) {
-          fileData = await tryFetchByPath(path);
+        // Strategy 1: Try activity repo first
+        const activityPaths = buildCandidatePaths(value, "activity");
+        console.log("[GitHubSearch] Activity Repo:", policyConfig.activity);
+        console.log("[GitHubSearch] Activity Branch:", policyConfig.activityBranch);
+        console.log("[GitHubSearch] Trying activity paths:", activityPaths);
+        
+        for (const path of activityPaths) {
+          fileData = await tryFetchByPath(policyConfig.activity, policyConfig.activityBranch, path);
           if (fileData) {
-            console.log("[GitHubSearch] Found at:", path);
+            source = `${policyConfig.activity} (${policyConfig.activityBranch})`;
+            console.log("[GitHubSearch] ✅ Found in activity repo:", path);
             break;
           }
         }
 
-        // Strategy 2: filename search via GitHub Search API
+        // Strategy 2: Fallback to common repo
         if (!fileData) {
-          console.log("[GitHubSearch] Direct paths failed, trying filename search...");
-          fileData = await searchByFilename(value);
+          const commonRepo = `corp-ais/sky-${policyConfig.productLine}-onboarding-common`;
+          const commonBranch = policyConfig.commonBranch;
+          const commonPaths = buildCandidatePaths(value, "common");
+          
+          console.log("[GitHubSearch] ❌ Not found in activity, trying common repo:", commonRepo);
+          console.log("[GitHubSearch] Common Branch:", commonBranch);
+          console.log("[GitHubSearch] Trying common paths:", commonPaths);
+          
+          for (const path of commonPaths) {
+            fileData = await tryFetchByPath(commonRepo, commonBranch, path);
+            if (fileData) {
+              source = `${commonRepo} (${commonBranch})`;
+              console.log("[GitHubSearch] ✅ Found in common repo:", path);
+              break;
+            }
+          }
         }
 
         if (!fileData) {
           toast.error(
-            `ไม่พบไฟล์ "${value}.json" ใน repo\nช่องทางที่ลอง: ${candidates[0]}`,
+            `ไม่พบไฟล์ "${value}.json"\n\n` +
+            `ค้นหาใน:\n` +
+            `1. ${policyConfig.activity} (${policyConfig.activityBranch})\n` +
+            `2. corp-ais/sky-${policyConfig.productLine}-onboarding-common (${policyConfig.commonBranch})\n\n` +
+            `💡 ตรวจสอบ branch และ repo ใน Policy Config`,
             { id: toastId, duration: 6000 }
           );
           return;
@@ -259,14 +244,14 @@ const useGitHubSearch = () => {
           // Merge: inject the resolved JSON into the current graph at the clicked node's path
           const merged = mergeIntoGraph(value, finalParsed, node);
           if (merged) {
-            toast.success(`เชื่อมต่อ ${value} เข้ากับ node สำเร็จ`, { id: toastId, duration: 3000 });
+            toast.success(`เชื่อมต่อ ${value} เข้ากับ node สำเร็จ\nจาก ${source}`, { id: toastId, duration: 3000 });
           } else {
             setContents({ contents: finalContent });
-            toast.success(`โหลด ${policyType}: ${fileData.name} สำเร็จ (แสดงแทน)`, { id: toastId });
+            toast.success(`โหลด ${policyType}: ${fileData.name} สำเร็จ (แสดงแทน)\nจาก ${source}`, { id: toastId });
           }
         } else {
           setContents({ contents: finalContent });
-          toast.success(`โหลด ${policyType}: ${fileData.name} สำเร็จ`, { id: toastId });
+          toast.success(`โหลด ${policyType}: ${fileData.name} สำเร็จ\nจาก ${source}`, { id: toastId });
         }
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -284,7 +269,7 @@ const useGitHubSearch = () => {
         setSearching(false);
       }
     },
-    [token, tryFetchByPath, searchByFilename, mergeIntoGraph, setContents, setOriginalJson]
+    [token, policyConfig, tryFetchByPath, mergeIntoGraph, setContents, setOriginalJson]
   );
 
   return { findAndLoad, searching };

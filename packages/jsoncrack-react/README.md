@@ -1,6 +1,6 @@
 # jsoncrack-react
 
-Reusable JSON graph canvas component from [JSON Crack](https://jsoncrack.com) — visualize JSON as interactive node graphs.
+Reusable JSON graph canvas component from [Policy Crack](https://jsoncrack.com) — visualize JSON as interactive node graphs.
 
 - React component API
 - Interactive canvas (pan/zoom + optional controls)

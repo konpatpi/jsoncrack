@@ -5,11 +5,13 @@ import type { NodeData } from "jsoncrack-react";
 import { LuSearch, LuInfo, LuExternalLink } from "react-icons/lu";
 import { detectPolicyType, extractPolicyCodes, buildGitHubWebUrl } from "../../../../hooks/useGitHubSearch";
 import useGitHubSearch from "../../../../hooks/useGitHubSearch";
+import useGitHub from "../../../../store/useGitHub";
 import useGraph from "./stores/useGraph";
 
 export const NodeContextMenu = () => {
   const contextMenu = useGraph(state => state.contextMenu);
   const setContextMenu = useGraph(state => state.setContextMenu);
+  const policyConfig = useGitHub(state => state.policyConfig);
   const { findAndLoad, searching } = useGitHubSearch();
 
   const ref = useClickOutside(() => setContextMenu(null));
@@ -79,7 +81,7 @@ export const NodeContextMenu = () => {
                     justify="start"
                     leftSection={<LuExternalLink size={13} />}
                     component="a"
-                    href={buildGitHubWebUrl(code)}
+                    href={buildGitHubWebUrl(code, policyConfig.activity || undefined, policyConfig.activityBranch)}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontFamily: "monospace" }}

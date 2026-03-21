@@ -3,10 +3,10 @@ import * as vscode from "vscode";
 import { createWebviewPanel } from "./webview";
 
 function getPanelTitle(document?: vscode.TextDocument) {
-  if (!document) return "JSON Crack";
+  if (!document) return "Policy Crack";
 
   const fileName = path.basename(document.fileName);
-  return fileName || "JSON Crack";
+  return fileName || "Policy Crack";
 }
 
 export function activate(context: vscode.ExtensionContext) {

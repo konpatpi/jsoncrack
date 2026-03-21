@@ -12,8 +12,8 @@ const Privacy = () => {
       <Head>
         {generateNextSeo({
           ...SEO,
-          title: "Privacy Policy - JSON Crack",
-          description: "JSON Crack Privacy Policy",
+          title: "Privacy Policy - Policy Crack",
+          description: "Policy Crack Privacy Policy",
           canonical: "https://jsoncrack.com/legal/privacy",
         })}
       </Head>

@@ -80,7 +80,7 @@ export const Section3 = () => {
             Visualize and convert to multiple formats
           </Title>
           <Text my="md" c="gray.7" fz={16} maw={510}>
-            JSON Crack supports formats like CSV, YAML, and XML, making it easier to visualize your
+            Policy Crack supports formats like CSV, YAML, and XML, making it easier to visualize your
             data, no matter the type.
           </Text>
           <List

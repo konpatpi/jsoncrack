@@ -1,5 +1,5 @@
 import React from "react";
-import { ActionIcon, Flex, Menu, Text } from "@mantine/core";
+import { ActionIcon, Flex, Menu, Text, Tooltip } from "@mantine/core";
 import { useHotkeys } from "@mantine/hooks";
 import styled from "styled-components";
 import type { LayoutDirection } from "jsoncrack-react";
@@ -7,6 +7,7 @@ import { event as gaEvent } from "nextjs-google-analytics";
 import { BsCheck2 } from "react-icons/bs";
 import { LuImageDown, LuMenu } from "react-icons/lu";
 import { TiFlowMerge } from "react-icons/ti";
+import { VscSplitHorizontal } from "react-icons/vsc";
 import useConfig from "../../../../store/useConfig";
 import { useModal } from "../../../../store/useModal";
 import useGraph from "./stores/useGraph";
@@ -36,8 +37,15 @@ export const OptionsMenu = () => {
   const rulersEnabled = useConfig(state => state.rulersEnabled);
   const setDirection = useGraph(state => state.setDirection);
   const direction = useGraph(state => state.direction);
+  const toggleFullscreen = useGraph(state => state.toggleFullscreen);
+  const fullscreen = useGraph(state => state.fullscreen);
   const setVisible = useModal(state => state.setVisible);
   const [coreKey, setCoreKey] = React.useState("CTRL");
+
+  const toggleEditor = () => {
+    toggleFullscreen(!fullscreen);
+    gaEvent("toggle_fullscreen");
+  };
 
   const toggleDirection = () => {
     const nextDirection = getNextDirection(direction || "RIGHT");
@@ -75,6 +83,19 @@ export const OptionsMenu = () => {
         zIndex: 100,
       }}
     >
+      {fullscreen && (
+        <Tooltip label="Show Editor Panel">
+          <ActionIcon
+            aria-label="toggle-panel"
+            size="lg"
+            color="gray"
+            variant="light"
+            onClick={toggleEditor}
+          >
+            <VscSplitHorizontal size="18" />
+          </ActionIcon>
+        </Tooltip>
+      )}
       <Menu withArrow>
         <Menu.Target>
           <ActionIcon aria-label="actions" size="lg" color="gray" variant="light">

@@ -66,7 +66,7 @@ const App: React.FC = () => {
           >
             <Box px="12" py="4" bg="dark">
               <Text fz="sm" c="white">
-                Powered by JSON Crack
+                Powered by Policy Crack
               </Text>
             </Box>
           </Anchor>

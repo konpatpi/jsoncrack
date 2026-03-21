@@ -70,7 +70,7 @@ export const Section1 = () => {
         fz={{ base: 16, sm: 18 }}
         w={{ base: "100%", md: "600" }}
       >
-        JSON Crack eliminates the chaos of raw, messy data, making the complex appear simple and
+        Policy Crack eliminates the chaos of raw, messy data, making the complex appear simple and
         easy to understand.
       </Title>
       <SimpleGrid

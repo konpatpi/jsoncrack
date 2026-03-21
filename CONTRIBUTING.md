@@ -1,4 +1,4 @@
-# Contributing to JSON Crack
+# Contributing to Policy Crack
 
 Thank you for wanting to contribute! This is a community-driven project, and we appreciate your help. Please read this guide carefully to make the review process smooth and fast.
 
@@ -27,7 +27,7 @@ This workflow prevents duplicate work and ensures your contribution aligns with 
 - pnpm (or npm/yarn)
 
 ### Tech Stack
-JSON Crack uses:
+Policy Crack uses:
 - **React** — UI library
 - **Reaflow** — Graph visualization
 - **Mantine UI** — UI components
@@ -126,4 +126,4 @@ No performance impact. Tooltip renders conditionally only on errors.
 - Have an idea? Open an issue
 - Confused about something? Comment on the issue
 
-Thank you for contributing to JSON Crack! 🎉
+Thank you for contributing to Policy Crack! 🎉

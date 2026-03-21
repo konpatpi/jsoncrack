@@ -58,7 +58,7 @@ export const JSONCrackLogo = ({ fontSize = "1.2rem", hideText, hideLogo }: LogoP
             mb="2"
           />
         )}
-        {!hideText && <StyledTitle fontSize={fontSize}>JSON CRACK</StyledTitle>}
+        {!hideText && <StyledTitle fontSize={fontSize}>POLICY CRACK</StyledTitle>}
       </StyledLogoWrapper>
     </Link>
   );

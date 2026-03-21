@@ -1,7 +1,7 @@
 {
   "name": "vscode",
   "version": "3.0.0",
-  "displayName": "JSON Crack",
+  "displayName": "Policy Crack",
   "description": "Seamlessly visualize your JSON data instantly into graphs.",
   "publisher": "AykutSarac",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "commands": [
       {
         "command": "jsoncrack-vscode.start",
-        "title": "Enable JSON Crack visualization",
+        "title": "Enable Policy Crack visualization",
         "category": "menubar",
         "icon": {
           "light": "./assets/icon-light.svg",
@@ -43,12 +43,12 @@
       },
       {
         "command": "jsoncrack-vscode.start.specific",
-        "title": "Enable JSON Crack visualization for specific file",
+        "title": "Enable Policy Crack visualization for specific file",
         "category": "menubar"
       },
       {
         "command": "jsoncrack-vscode.start.selected",
-        "title": "Open with JSON Crack",
+        "title": "Open with Policy Crack",
         "category": "Navigation"
       }
     ],

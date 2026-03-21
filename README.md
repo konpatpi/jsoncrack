@@ -4,7 +4,7 @@
    <img src="./apps/www/public/assets/192.png" height="50" alt="Logo">
   </a>
 
-  <h1 align="center">JSON Crack</h1>
+  <h1 align="center">Policy Crack</h1>
 
   <p align="center">
     The open-source JSON Editor.
@@ -32,7 +32,7 @@
 
 ## Visualize JSON into interactive graphs
 
-JSON Crack is a tool for visualizing JSON data in a structured, interactive graphs, making it easier to explore, format, and validate JSON. It offers features like converting JSON to other formats (CSV, YAML), generating JSON Schema, executing queries, and exporting visualizations as images. Designed for both readability and usability.
+Policy Crack is a tool for visualizing JSON data in a structured, interactive graphs, making it easier to explore, format, and validate JSON. It offers features like converting JSON to other formats (CSV, YAML), generating JSON Schema, executing queries, and exporting visualizations as images. Designed for both readability and usability.
 
 * **Visualizer**: Instantly convert JSON, YAML, CSV, and XML into interactive graphs or trees in dark or light mode.
 * **Convert**: Seamlessly transform data formats, like JSON to CSV or XML to JSON, for easy sharing.
@@ -53,7 +53,7 @@ JSON Crack is a tool for visualizing JSON data in a structured, interactive grap
   />
 </a>
 
-<a href="https://producthunt.com/posts/JSON-Crack?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-jsoncrack" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=332281&theme=light" alt="JSON Crack | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+<a href="https://producthunt.com/posts/JSON-Crack?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-jsoncrack" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=332281&theme=light" alt="Policy Crack | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ## Integrations
 
@@ -67,11 +67,11 @@ JSON Crack is a tool for visualizing JSON data in a structured, interactive grap
 
 ## Sponsors & Support
 
-If you find JSON Crack useful, you can support the project by using [ToDiagram](https://todiagram.com).
+If you find Policy Crack useful, you can support the project by using [ToDiagram](https://todiagram.com).
 
 ## Stay Up-to-Date
 
-JSON Crack officially launched as v1.0 on the 17th of February 2022 and we've come a long way so far. Watch **releases** of this repository to be notified of future updates:
+Policy Crack officially launched as v1.0 on the 17th of February 2022 and we've come a long way so far. Watch **releases** of this repository to be notified of future updates:
 
 <a href="https://github.com/AykutSarac/jsoncrack.com"><img src="https://img.shields.io/github/stars/AykutSarac/jsoncrack.com" alt="Star at GitHub" /></a>
 
@@ -83,7 +83,7 @@ To get a local copy up and running, please follow these simple steps.
 
 ### Prerequisites
 
-Here is what you need to be able to run JSON Crack.
+Here is what you need to be able to run Policy Crack.
 
 - Node.js (Version: >=24.x)
 - pnpm (Version: >=10)
@@ -148,12 +148,12 @@ pnpm lint
 2. Press `F5`.
 3. Select `Run VSCode Extension (apps/vscode)` when prompted.
 4. In the Extension Development Host window, open a `.json` file and run:
-   `JSON Crack: Enable JSON Crack visualization`.
+   `Policy Crack: Enable Policy Crack visualization`.
 
 ### Docker
 
 🐳 Docker assets are in `apps/www`.
-If you want to run JSON Crack locally:
+If you want to run Policy Crack locally:
 
 ```console
 cd apps/www

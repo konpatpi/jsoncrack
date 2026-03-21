@@ -114,7 +114,7 @@ export const NotSupported = () => {
             Your diagram is too large
           </Text>
           <Text ta="center" size="sm" c="dimmed" maw="360" lh={1.5}>
-            JSON Crack can&apos;t render this file.{" "}
+            Policy Crack can&apos;t render this file.{" "}
             <Anchor
               inherit
               c="teal"

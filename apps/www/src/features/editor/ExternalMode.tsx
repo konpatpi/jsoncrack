@@ -18,7 +18,7 @@ const ExternalMode = () => {
 
   return (
     <Modal
-      title="Thanks for using JSON Crack"
+      title="Thanks for using Policy Crack"
       opened={isExternal}
       onClose={() => setExternal(false)}
       centered
@@ -112,10 +112,10 @@ const ExternalMode = () => {
           </Accordion.Item>
           <Accordion.Item value="6">
             <Accordion.Control>
-              What is the difference between JSON Crack and ToDiagram?
+              What is the difference between Policy Crack and ToDiagram?
             </Accordion.Control>
             <Accordion.Panel>
-              JSON Crack is a free and open-source tool for visualizing JSON data. ToDiagram is the
+              Policy Crack is a free and open-source tool for visualizing JSON data. ToDiagram is the
               professional version that offers advanced features, higher limits, and the ability to
               edit data directly from diagrams. You can learn more or upgrade at{" "}
               <Anchor

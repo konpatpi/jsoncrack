@@ -82,9 +82,9 @@ const EditorPage = () => {
       <Head>
         {generateNextSeo({
           ...SEO,
-          title: "Editor | JSON Crack",
+          title: "Editor | Policy Crack",
           description:
-            "JSON Crack Editor is a tool for visualizing into graphs, analyzing, editing, formatting, querying, transforming and validating JSON, CSV, YAML, XML, and more.",
+            "Policy Crack Editor is a tool for visualizing into graphs, analyzing, editing, formatting, querying, transforming and validating JSON, CSV, YAML, XML, and more.",
           canonical: "https://jsoncrack.com/editor",
         })}
       </Head>
