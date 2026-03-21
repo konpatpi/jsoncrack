@@ -59,8 +59,8 @@ const ObjectNodeBase = ({ node, x, y }: ObjectNodeProps) => (
     y={0}
   >
     {node.text.map((row, index) => (
-      <Row key={`${node.id}-${index}`} row={row} x={x} y={y} index={index} />
-    ))}
+        <Row key={`${node.id}-${index}`} row={row} x={x} y={y} index={index} />
+      ))}
   </foreignObject>
 );
 

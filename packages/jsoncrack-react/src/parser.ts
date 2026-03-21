@@ -181,25 +181,26 @@ export const parseGraph = (json: string): ParseGraphResult => {
     } else {
       let displayText: string | [string, string][];
 
-      if (text.some(row => row.key !== null)) {
-        displayText = text.map(row => {
+      const visibleText = text.filter(row => row.value !== null);
+
+      if (visibleText.some(row => row.key !== null)) {
+        displayText = visibleText.map(row => {
           const keyStr = row.key === null ? "" : row.key;
 
           if (row.type === "object") return [keyStr, `{${row.childrenCount ?? 0} keys}`];
           if (row.type === "array") return [keyStr, `[${row.childrenCount ?? 0} items]`];
-          if (row.value === null) return [keyStr, "null"];
 
           return [keyStr, `${row.value}`];
         });
       } else {
-        displayText = `${text[0].value}`;
+        displayText = `${visibleText[0]?.value ?? ""}`;
       }
 
       const { width, height } = calculateNodeSize(displayText);
 
       nodes.push({
         id,
-        text,
+        text: visibleText,
         width,
         height,
         path: getNodePath(node),
