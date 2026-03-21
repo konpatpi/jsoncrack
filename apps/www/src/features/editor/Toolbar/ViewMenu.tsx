@@ -1,8 +1,10 @@
-import { Menu, Flex, SegmentedControl } from "@mantine/core";
+import { Menu, Flex, SegmentedControl, Switch, Divider, Text } from "@mantine/core";
 import { useSessionStorage } from "@mantine/hooks";
 import { event as gaEvent } from "nextjs-google-analytics";
 import { CgChevronDown } from "react-icons/cg";
 import { ViewMode } from "../../../enums/viewMode.enum";
+import useConfig from "../../../store/useConfig";
+import useFile from "../../../store/useFile";
 import { StyledToolElement } from "./styles";
 
 export const ViewMenu = () => {
@@ -10,6 +12,17 @@ export const ViewMenu = () => {
     key: "viewMode",
     defaultValue: ViewMode.Graph,
   });
+  const compactConditionsEnabled = useConfig(state => state.compactConditionsEnabled);
+  const toggleCompactConditions = useConfig(state => state.toggleCompactConditions);
+  const getContents = useFile(state => state.getContents);
+  const setContents = useFile(state => state.setContents);
+
+  const handleToggleCompact = (enabled: boolean) => {
+    toggleCompactConditions(enabled);
+    // Re-process current content immediately
+    const current = getContents();
+    if (current) setContents({ contents: current, hasChanges: false });
+  };
 
   return (
     <Menu shadow="md" closeOnItemClick={false} withArrow>
@@ -36,6 +49,17 @@ export const ViewMenu = () => {
           fullWidth
           orientation="vertical"
         />
+        <Divider my="xs" />
+        <Menu.Item closeMenuOnClick={false}>
+          <Flex align="center" justify="space-between" gap="md">
+            <Text size="xs">Compact Policy Conditions</Text>
+            <Switch
+              size="xs"
+              checked={compactConditionsEnabled}
+              onChange={e => handleToggleCompact(e.currentTarget.checked)}
+            />
+          </Flex>
+        </Menu.Item>
       </Menu.Dropdown>
     </Menu>
   );

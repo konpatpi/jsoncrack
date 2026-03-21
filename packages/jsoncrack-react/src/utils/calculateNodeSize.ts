@@ -45,13 +45,14 @@ const calculateWidthAndHeight = (str: string, single = false): Size => {
   dummyElement.style.width = "fit-content";
   dummyElement.style.padding = "0 10px";
   dummyElement.style.fontWeight = "500";
-  dummyElement.style.fontFamily = "monospace";
+  dummyElement.style.fontFamily =
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
   document.body.appendChild(dummyElement);
 
   const clientRect = dummyElement.getBoundingClientRect();
   const lines = str.split("\n").length;
 
-  const width = clientRect.width + 4;
+  const width = clientRect.width + 24;
   const height = single ? NODE_DIMENSIONS.PARENT_HEIGHT : lines * NODE_DIMENSIONS.ROW_HEIGHT;
 
   document.body.removeChild(dummyElement);

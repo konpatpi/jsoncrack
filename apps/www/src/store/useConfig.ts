@@ -6,6 +6,7 @@ const initialStates = {
   liveTransformEnabled: true,
   gesturesEnabled: false,
   rulersEnabled: true,
+  compactConditionsEnabled: false,
 };
 
 export interface ConfigActions {
@@ -13,6 +14,7 @@ export interface ConfigActions {
   toggleLiveTransform: (value: boolean) => void;
   toggleGestures: (value: boolean) => void;
   toggleRulers: (value: boolean) => void;
+  toggleCompactConditions: (value: boolean) => void;
 }
 
 const useConfig = create(
@@ -23,6 +25,7 @@ const useConfig = create(
       toggleGestures: gesturesEnabled => set({ gesturesEnabled }),
       toggleLiveTransform: liveTransformEnabled => set({ liveTransformEnabled }),
       toggleDarkMode: darkmodeEnabled => set({ darkmodeEnabled }),
+      toggleCompactConditions: compactConditionsEnabled => set({ compactConditionsEnabled }),
     }),
     {
       name: "config",

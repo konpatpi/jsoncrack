@@ -5,6 +5,7 @@ import { create } from "zustand";
 import exampleJson from "../data/example.json";
 import { FileFormat } from "../enums/file.enum";
 import { isIframe } from "../lib/utils/helpers";
+import { applyPolicyTransform, hasPolicyConditions } from "../lib/utils/policyTransform";
 import { contentToJson, jsonToContent } from "../lib/utils/jsonAdapter";
 import useConfig from "./useConfig";
 import useJson from "./useJson";
@@ -107,7 +108,17 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
       });
 
       const isFetchURL = window.location.href.includes("?");
-      const json = await contentToJson(get().contents, get().format);
+      let json = await contentToJson(get().contents, get().format);
+
+      // Apply policy condition compact transform if enabled
+      if (useConfig.getState().compactConditionsEnabled) {
+        const jsonStr = JSON.stringify(json);
+        if (hasPolicyConditions(jsonStr)) {
+          useJson.getState().setOriginalJson(jsonStr); // store before transform
+          const transformed = applyPolicyTransform(jsonStr);
+          try { json = JSON.parse(transformed); } catch { /* keep original */ }
+        }
+      }
 
       if (!useConfig.getState().liveTransformEnabled && skipUpdate) return;
 

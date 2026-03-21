@@ -1,12 +1,20 @@
-import type { LayoutDirection, NodeData } from "jsoncrack-react";
+import type { GraphData, LayoutDirection, NodeData } from "jsoncrack-react";
 import type { ViewPort } from "react-zoomable-ui";
 import { create } from "zustand";
+
+export interface ContextMenuState {
+  node: NodeData;
+  x: number;
+  y: number;
+}
 
 export interface Graph {
   viewPort: ViewPort | null;
   direction: LayoutDirection;
   fullscreen: boolean;
   selectedNode: NodeData | null;
+  nodes: NodeData[];
+  contextMenu: ContextMenuState | null;
 }
 
 const initialStates: Graph = {
@@ -14,12 +22,16 @@ const initialStates: Graph = {
   direction: "RIGHT",
   fullscreen: false,
   selectedNode: null,
+  nodes: [],
+  contextMenu: null,
 };
 
 interface GraphActions {
   setDirection: (direction: LayoutDirection) => void;
   setViewPort: (ref: ViewPort) => void;
   setSelectedNode: (nodeData: NodeData | null) => void;
+  setNodes: (graph: GraphData) => void;
+  setContextMenu: (menu: ContextMenuState | null) => void;
   focusFirstNode: () => void;
   toggleFullscreen: (value: boolean) => void;
   zoomIn: () => void;
@@ -30,6 +42,8 @@ interface GraphActions {
 const useGraph = create<Graph & GraphActions>((set, get) => ({
   ...initialStates,
   setSelectedNode: nodeData => set({ selectedNode: nodeData }),
+  setNodes: graph => set({ nodes: graph.nodes }),
+  setContextMenu: menu => set({ contextMenu: menu }),
   setDirection: (direction = "RIGHT") => {
     set({ direction });
     setTimeout(() => get().centerView(), 200);
