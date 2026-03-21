@@ -69,6 +69,16 @@ interface GitHubFileContent {
   path: string;
 }
 
+// Build the first candidate GitHub web URL for a policy code
+export const buildGitHubWebUrl = (code: string): string => {
+  const prefix = code.slice(0, 4).toUpperCase();
+  const folder = POLICY_FOLDER_MAP[prefix];
+  const filePath = folder
+    ? `${BASE_PATHS[0]}/${folder}/${code}.json`
+    : `${BASE_PATHS[0]}/${code}.json`;
+  return `https://github.com/${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${filePath}`;
+};
+
 const useGitHubSearch = () => {
   const token = useGitHub(state => state.token);
   const setContents = useFile(state => state.setContents);

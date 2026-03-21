@@ -17,6 +17,48 @@ const TextNodeBase = ({ node, x, y }: TextNodeProps) => {
   if (!firstRow) return null;
 
   const value = firstRow.value;
+  const isMultiline = typeof value === "string" && value.includes("\n");
+
+  if (isMultiline) {
+    const lines = (value as string).split("\n");
+    return (
+      <foreignObject
+        className={`${styles.foreignObject} ${styles.objectForeignObject}`}
+        data-id={`node-${node.id}`}
+        width={width}
+        height={height}
+        x={0}
+        y={0}
+      >
+        {lines.map((line, i) => {
+          const sepIdx = line.indexOf(": ");
+          const hasKey = sepIdx !== -1;
+          const keyPart = hasKey ? line.slice(0, sepIdx) : null;
+          const valPart = hasKey ? line.slice(sepIdx + 2) : line;
+          return (
+            <span
+              key={i}
+              className={styles.row}
+              data-x={x}
+              data-y={y}
+            >
+              {hasKey && (
+                <span
+                  className={styles.key}
+                  style={{ color: getTextColor({ type: "object", value: keyPart }) }}
+                >
+                  {keyPart}:{" "}
+                </span>
+              )}
+              <span style={{ color: getTextColor({ value: valPart, type: "string" }) }}>
+                <TextRenderer>{valPart}</TextRenderer>
+              </span>
+            </span>
+          );
+        })}
+      </foreignObject>
+    );
+  }
 
   return (
     <foreignObject

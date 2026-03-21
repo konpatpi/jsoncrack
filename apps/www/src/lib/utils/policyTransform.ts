@@ -5,15 +5,19 @@
 interface PolicyVariable {
   displayVariable?: string | null;
   source?: string | null;
+  sourceType?: string | null;
 }
 
 interface PolicyOperator {
   name?: string | null;
+  opType?: number | null;
 }
 
 interface PolicyValue {
   name?: string | null;
   valueType?: string | null;
+  target?: string | null;
+  targetType?: string | null;
 }
 
 interface PolicyConditionStatement {
@@ -31,44 +35,30 @@ interface PolicyCondition {
   policyConditionStatement?: PolicyConditionStatement | null;
 }
 
-const formatVariable = (v: PolicyVariable | null | undefined): string => {
-  return v?.displayVariable ?? v?.source ?? "?";
-};
+const formatConditionLine = (c: PolicyCondition): string => {
+  const stmt = c.policyConditionStatement;
+  if (!stmt) return c.name ?? c.id ?? "?";
 
-const formatOperator = (op: PolicyOperator | null | undefined): string => {
-  const name = op?.name ?? "?";
-  // Compact symbols
-  switch (name.toLowerCase()) {
-    case "equals": return "=";
-    case "not equals": return "≠";
-    case "greater than": return ">";
-    case "less than": return "<";
-    case "greater than or equals": return "≥";
-    case "less than or equals": return "≤";
-    case "contains": return "contains";
-    case "not contains": return "not contains";
-    case "in": return "in";
-    case "not in": return "not in";
-    case "starts with": return "startsWith";
-    case "ends with": return "endsWith";
-    case "is null": return "= null";
-    case "is not null": return "≠ null";
-    default: return name;
-  }
-};
+  // Value display: target if not null, else name
+  const pv = stmt.policyValue;
+  const valueDisplay =
+    pv?.target != null
+      ? pv.target
+      : pv?.name != null
+        ? pv.name
+        : "null";
 
-const formatValue = (v: PolicyValue | null | undefined): string => {
-  if (!v) return "?";
-  if (v.valueType === "null") return "null";
-  if (v.name !== null && v.name !== undefined) return `"${v.name}"`;
-  return v.valueType ?? "?";
-};
+  // Line 1: name
+  const nameLine = `name: ${c.name ?? "null"}`;
 
-const formatConditionLine = (stmt: PolicyConditionStatement): string => {
-  const variable = formatVariable(stmt.policyVariable);
-  const operator = formatOperator(stmt.policyOperator);
-  const value = formatValue(stmt.policyValue);
-  return `${variable} ${operator} ${value}`;
+  // Line 2: condition
+  const source = stmt.policyVariable?.source ?? "null";
+  const opName = stmt.policyOperator?.name ?? "null";
+  const opType = stmt.policyOperator?.opType;
+  const opPart = opType != null ? `${opName} (${opType})` : opName;
+  const condLine = `condition: ${source} | ${opPart} | ${valueDisplay}`;
+
+  return `${nameLine}\n${condLine}`;
 };
 
 /** Compact a single policyCondition array into grouped, readable representation */
@@ -84,10 +74,7 @@ export const compactConditionArray = (conditions: PolicyCondition[]): Record<str
   const sortedGroups = [...groups.entries()].sort(([a], [b]) => a - b);
 
   const toLine = (c: PolicyCondition): string => {
-    if (c.policyConditionStatement) {
-      return formatConditionLine(c.policyConditionStatement);
-    }
-    return c.name ?? c.id ?? "?";
+    return formatConditionLine(c);
   };
 
   // Single group → flat array

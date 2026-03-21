@@ -1,5 +1,4 @@
 import React from "react";
-import Link from "next/link";
 import { Flex, Group } from "@mantine/core";
 import styled from "styled-components";
 import toast from "react-hot-toast";
@@ -67,11 +66,6 @@ export const Toolbar = () => {
         >
           <FaGithub size="20" />
         </StyledToolElement>
-        <Link href="https://github.com/AykutSarac/jsoncrack.com" rel="noopener" target="_blank">
-          <StyledToolElement title="GitHub">
-            <FaGithub size="20" />
-          </StyledToolElement>
-        </Link>
         <StyledToolElement title="Fullscreen" onClick={fullscreenBrowser}>
           <AiOutlineFullscreen size="20" />
         </StyledToolElement>

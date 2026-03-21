@@ -2,8 +2,8 @@ import React from "react";
 import { Paper, Stack, Button, Text, Divider, Group, Badge } from "@mantine/core";
 import { useClickOutside } from "@mantine/hooks";
 import type { NodeData } from "jsoncrack-react";
-import { LuSearch, LuInfo } from "react-icons/lu";
-import { detectPolicyType, extractPolicyCodes } from "../../../../hooks/useGitHubSearch";
+import { LuSearch, LuInfo, LuExternalLink } from "react-icons/lu";
+import { detectPolicyType, extractPolicyCodes, buildGitHubWebUrl } from "../../../../hooks/useGitHubSearch";
 import useGitHubSearch from "../../../../hooks/useGitHubSearch";
 import useGraph from "./stores/useGraph";
 
@@ -54,25 +54,39 @@ export const NodeContextMenu = () => {
             {policyCodes.map(code => {
               const policyType = detectPolicyType(code);
               return (
-                <Button
-                  key={code}
-                  variant="subtle"
-                  size="xs"
-                  justify="start"
-                  leftSection={<LuSearch size={13} />}
-                  loading={searching}
-                  onClick={() => handleFind(code)}
-                  style={{ fontFamily: "monospace" }}
-                >
-                  <Group gap={6}>
-                    <span>{code}</span>
-                    {policyType && (
-                      <Badge size="xs" variant="light" color="blue">
-                        {policyType}
-                      </Badge>
-                    )}
-                  </Group>
-                </Button>
+                <React.Fragment key={code}>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    justify="start"
+                    leftSection={<LuSearch size={13} />}
+                    loading={searching}
+                    onClick={() => handleFind(code)}
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    <Group gap={6}>
+                      <span>{code}</span>
+                      {policyType && (
+                        <Badge size="xs" variant="light" color="blue">
+                          {policyType}
+                        </Badge>
+                      )}
+                    </Group>
+                  </Button>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    justify="start"
+                    leftSection={<LuExternalLink size={13} />}
+                    component="a"
+                    href={buildGitHubWebUrl(code)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontFamily: "monospace" }}
+                  >
+                    Open on Web — {code}
+                  </Button>
+                </React.Fragment>
               );
             })}
           </>

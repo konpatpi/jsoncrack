@@ -31,15 +31,43 @@ const fallbackSize = (str: string, single: boolean): Size => {
 const calculateWidthAndHeight = (str: string, single = false): Size => {
   if (!str) return { width: 45, height: 45 };
 
+  // A single-value string that embeds newlines is rendered as stacked rows
+  const isMultilineSingle = single && str.includes("\n");
+  const effectivelySingle = single && !isMultilineSingle;
+
   if (typeof document === "undefined") {
-    return fallbackSize(str, single);
+    return fallbackSize(str, effectivelySingle);
+  }
+
+  if (isMultilineSingle) {
+    // Measure each line independently, take max width
+    const lines = str.split("\n");
+    const dummyElement = document.createElement("div");
+    dummyElement.style.position = "absolute";
+    dummyElement.style.visibility = "hidden";
+    dummyElement.style.pointerEvents = "none";
+    dummyElement.style.whiteSpace = "nowrap";
+    dummyElement.style.fontSize = "12px";
+    dummyElement.style.width = "fit-content";
+    dummyElement.style.padding = "0 10px";
+    dummyElement.style.fontWeight = "500";
+    dummyElement.style.fontFamily =
+      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+    document.body.appendChild(dummyElement);
+    let maxWidth = 45;
+    for (const line of lines) {
+      dummyElement.innerText = line;
+      maxWidth = Math.max(maxWidth, dummyElement.getBoundingClientRect().width + 24);
+    }
+    document.body.removeChild(dummyElement);
+    return { width: maxWidth, height: lines.length * NODE_DIMENSIONS.ROW_HEIGHT };
   }
 
   const dummyElement = document.createElement("div");
   dummyElement.style.position = "absolute";
   dummyElement.style.visibility = "hidden";
   dummyElement.style.pointerEvents = "none";
-  dummyElement.style.whiteSpace = single ? "nowrap" : "pre-wrap";
+  dummyElement.style.whiteSpace = "nowrap";
   dummyElement.innerText = str;
   dummyElement.style.fontSize = "12px";
   dummyElement.style.width = "fit-content";
@@ -53,7 +81,7 @@ const calculateWidthAndHeight = (str: string, single = false): Size => {
   const lines = str.split("\n").length;
 
   const width = clientRect.width + 24;
-  const height = single ? NODE_DIMENSIONS.PARENT_HEIGHT : lines * NODE_DIMENSIONS.ROW_HEIGHT;
+  const height = effectivelySingle ? NODE_DIMENSIONS.PARENT_HEIGHT : lines * NODE_DIMENSIONS.ROW_HEIGHT;
 
   document.body.removeChild(dummyElement);
   return { width, height };
