@@ -19,7 +19,6 @@ import useConfig from "../store/useConfig";
 import useFile from "../store/useFile";
 
 const ModalController = dynamic(() => import("../features/modals/ModalController"));
-const ExternalMode = dynamic(() => import("../features/editor/ExternalMode"));
 
 export const StyledPageWrapper = styled.div`
   display: flex;
@@ -90,7 +89,6 @@ const EditorPage = () => {
         })}
       </Head>
       <ThemeProvider theme={darkmodeEnabled ? darkTheme : lightTheme}>
-        <ExternalMode />
         <ModalController />
         <StyledEditorWrapper>
           <StyledPageWrapper>
