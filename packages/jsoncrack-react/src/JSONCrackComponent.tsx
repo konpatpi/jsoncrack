@@ -95,7 +95,6 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
     const [paneWidth, setPaneWidth] = React.useState(2000);
     const [paneHeight, setPaneHeight] = React.useState(2000);
     const hasAutoFittedRef = React.useRef(false);
-    const previousLayoutAreaRef = React.useRef<number | null>(null);
     const callbacksRef = React.useRef({ onParse, onParseError });
     const onViewportCreateRef = React.useRef(onViewportCreate);
     const lastParsedInputRef = React.useRef<{
@@ -113,7 +112,6 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
 
     React.useEffect(() => {
       hasAutoFittedRef.current = false;
-      previousLayoutAreaRef.current = null;
     }, [layoutDirection]);
 
     const centerView = React.useCallback(() => {
@@ -245,21 +243,13 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
           return;
         }
 
-        const currentLayoutArea = layout.width * layout.height;
-        const previousLayoutArea = previousLayoutAreaRef.current;
-        previousLayoutAreaRef.current = currentLayoutArea;
-
         setPaneWidth(layout.width + 50);
         setPaneHeight(layout.height + 50);
 
         setTimeout(() => {
           window.requestAnimationFrame(() => {
             const isFirstAutoFit = !hasAutoFittedRef.current;
-            const hasLargeLayoutChange =
-              previousLayoutArea !== null &&
-              previousLayoutArea > 0 &&
-              Math.abs((currentLayoutArea * 100) / previousLayoutArea - 100) > 70;
-            const shouldAutoFit = centerOnLayout && (isFirstAutoFit || hasLargeLayoutChange);
+            const shouldAutoFit = centerOnLayout && isFirstAutoFit;
 
             if (shouldAutoFit) {
               centerView();
