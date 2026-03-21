@@ -6,6 +6,8 @@ import toast from "react-hot-toast";
 import { AiOutlineFullscreen } from "react-icons/ai";
 import { FaGithub } from "react-icons/fa6";
 import { JSONCrackLogo } from "../../../layout/JSONCrackBrandLogo";
+import { useModal } from "../../../store/useModal";
+import useGitHub from "../../../store/useGitHub";
 import { FileMenu } from "./FileMenu";
 import { ThemeToggle } from "./ThemeToggle";
 import { ToolsMenu } from "./ToolsMenu";
@@ -42,6 +44,8 @@ function fullscreenBrowser() {
 }
 
 export const Toolbar = () => {
+  const setVisible = useModal(state => state.setVisible);
+  const hasGitHubToken = useGitHub(state => Boolean(state.token));
   return (
     <StyledTools>
       <Group gap="xs" justify="left" w="100%" style={{ flexWrap: "nowrap" }}>
@@ -56,6 +60,13 @@ export const Toolbar = () => {
       </Group>
       <Group gap="xs" justify="right" w="100%" style={{ flexWrap: "nowrap" }}>
         <ThemeToggle />
+        <StyledToolElement
+          title={hasGitHubToken ? "GitHub (เชื่อมต่อแล้ว)" : "GitHub Config"}
+          onClick={() => setVisible("GitHubModal", true)}
+          style={{ color: hasGitHubToken ? "#4ade80" : undefined }}
+        >
+          <FaGithub size="20" />
+        </StyledToolElement>
         <Link href="https://github.com/AykutSarac/jsoncrack.com" rel="noopener" target="_blank">
           <StyledToolElement title="GitHub">
             <FaGithub size="20" />

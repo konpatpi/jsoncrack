@@ -1,4 +1,5 @@
 export { DownloadModal } from "./DownloadModal";
+export { GitHubModal } from "./GitHubModal";
 export { ImportModal } from "./ImportModal";
 export { NodeModal } from "./NodeModal";
 export { SchemaModal } from "./SchemaModal";
