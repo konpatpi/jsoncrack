@@ -24,7 +24,7 @@
         "lint:fix:vscode": "turbo run lint:fix --filter=vscode",
         "analyze": "turbo run analyze",
         "clean": "turbo run clean",
-        "deploy": "cd apps/www && npx wrangler pages deploy out --project-name=jsoncrack"
+        "deploy": "cd apps/www && npx wrangler deploy"
     },
     "devDependencies": {
         "turbo": "^2.8.20"
