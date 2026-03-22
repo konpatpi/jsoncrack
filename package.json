@@ -1,43 +1,44 @@
 {
-  "name": "jsoncrack-monorepo",
-  "private": true,
-  "license": "Apache-2.0",
-  "homepage": "https://jsoncrack.com",
-  "author": {
-    "name": "Aykut Saraç",
-    "email": "aykutsarac0@gmail.com"
-  },
-  "bugs": {
-    "url": "https://github.com/AykutSarac/jsoncrack.com/issues"
-  },
-  "scripts": {
-    "dev": "turbo run dev",
-    "dev:www": "turbo run dev --filter=www",
-    "dev:vscode": "turbo run watch --filter=vscode",
-    "build": "turbo run build",
-    "build:www": "turbo run build --filter=www",
-    "build:vscode": "turbo run build --filter=vscode",
-    "start": "turbo run start",
-    "lint": "turbo run lint",
-    "lint:vscode": "turbo run lint --filter=vscode",
-    "lint:fix": "turbo run lint:fix",
-    "lint:fix:vscode": "turbo run lint:fix --filter=vscode",
-    "analyze": "turbo run analyze",
-    "clean": "turbo run clean"
-  },
-  "devDependencies": {
-    "turbo": "^2.8.20"
-  },
-  "engines": {
-    "node": ">=24",
-    "pnpm": ">=10"
-  },
-  "packageManager": "pnpm@10.20.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ]
-  }
+    "name": "jsoncrack-monorepo",
+    "private": true,
+    "license": "Apache-2.0",
+    "homepage": "https://jsoncrack.com",
+    "author": {
+        "name": "Aykut Saraç",
+        "email": "aykutsarac0@gmail.com"
+    },
+    "bugs": {
+        "url": "https://github.com/AykutSarac/jsoncrack.com/issues"
+    },
+    "scripts": {
+        "dev": "turbo run dev",
+        "dev:www": "turbo run dev --filter=www",
+        "dev:vscode": "turbo run watch --filter=vscode",
+        "build": "turbo run build",
+        "build:www": "turbo run build --filter=www",
+        "build:vscode": "turbo run build --filter=vscode",
+        "start": "turbo run start",
+        "lint": "turbo run lint",
+        "lint:vscode": "turbo run lint --filter=vscode",
+        "lint:fix": "turbo run lint:fix",
+        "lint:fix:vscode": "turbo run lint:fix --filter=vscode",
+        "analyze": "turbo run analyze",
+        "clean": "turbo run clean",
+        "deploy": "cd apps/www && npx wrangler pages deploy out"
+    },
+    "devDependencies": {
+        "turbo": "^2.8.20"
+    },
+    "engines": {
+        "node": ">=24",
+        "pnpm": ">=10"
+    },
+    "packageManager": "pnpm@10.20.0",
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild",
+            "sharp",
+            "unrs-resolver"
+        ]
+    }
 }
