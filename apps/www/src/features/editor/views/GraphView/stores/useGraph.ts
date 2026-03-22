@@ -50,6 +50,7 @@ const useGraph = create<Graph & GraphActions>((set, get) => ({
   },
   focusFirstNode: () => {
     const rootNode = document.querySelector("g[id$='node-1']");
+    if (!rootNode) return;
     get().viewPort?.camera?.centerFitElementIntoView(rootNode as HTMLElement, {
       elementExtraMarginForZoom: 100,
     });

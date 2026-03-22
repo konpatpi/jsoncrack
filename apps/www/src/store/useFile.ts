@@ -100,6 +100,7 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
   },
   setContents: async ({ contents, hasChanges = true, skipUpdate = false, format }) => {
     try {
+      const prevContents = get().contents;
       set({
         ...(contents && { contents }),
         error: null,
@@ -110,14 +111,20 @@ const useFile = create<FileStates & JsonActions>()((set, get) => ({
       const isFetchURL = window.location.href.includes("?");
       let json = await contentToJson(get().contents, get().format);
 
-      // Apply policy condition compact transform if enabled
-      if (useConfig.getState().compactConditionsEnabled) {
-        const jsonStr = JSON.stringify(json);
-        if (hasPolicyConditions(jsonStr)) {
-          useJson.getState().setOriginalJson(jsonStr); // store before transform
-          const transformed = applyPolicyTransform(jsonStr);
-          try { json = JSON.parse(transformed); } catch { /* keep original */ }
-        }
+      // Always store the raw JSON before any transform (needed for NodeModal to show
+      // original policyConditionStatement / policyActionStatement objects).
+      const jsonStr = JSON.stringify(json);
+      useJson.getState().setOriginalJson(jsonStr);
+
+      // Always apply policy condition compact transform
+      if (hasPolicyConditions(jsonStr)) {
+        const transformed = applyPolicyTransform(jsonStr);
+        try { json = JSON.parse(transformed); } catch { /* keep original */ }
+      }
+
+      // Clear any eval overlay only when the editor content actually changed
+      if (get().contents !== prevContents && useJson.getState().evalJson !== null) {
+        useJson.getState().clearEvalJson();
       }
 
       if (!useConfig.getState().liveTransformEnabled && skipUpdate) return;

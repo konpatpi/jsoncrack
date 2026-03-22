@@ -5,12 +5,15 @@ interface JsonActions {
   getJson: () => string;
   setOriginalJson: (json: string) => void;
   getOriginalJson: () => string;
+  setEvalJson: (json: string) => void;
+  clearEvalJson: () => void;
   clear: () => void;
 }
 
 const initialStates = {
   json: "{}",
   originalJson: "{}",
+  evalJson: null as string | null,
   loading: true,
 };
 
@@ -26,8 +29,10 @@ const useJson = create<JsonStates & JsonActions>()((set, get) => ({
   setOriginalJson: json => {
     set({ originalJson: json });
   },
+  setEvalJson: evalJson => set({ evalJson }),
+  clearEvalJson: () => set({ evalJson: null }),
   clear: () => {
-    set({ json: "", originalJson: "", loading: false });
+    set({ json: "", originalJson: "", evalJson: null, loading: false });
   },
 }));
 

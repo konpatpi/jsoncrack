@@ -69,6 +69,7 @@ const useGitHubSearch = () => {
   const getJson = useJson(state => state.getJson);
   const setJson = useJson(state => state.setJson);
   const setOriginalJson = useJson(state => state.setOriginalJson);
+  const getOriginalJson = useJson(state => state.getOriginalJson);
   const [searching, setSearching] = React.useState(false);
 
   const headers = React.useMemo(
@@ -114,7 +115,7 @@ const useGitHubSearch = () => {
    * Adds a key named `code` to the object at that path.
    */
   const mergeIntoGraph = React.useCallback(
-    (code: string, resolvedJson: unknown, node: NodeData): boolean => {
+    (code: string, resolvedJson: unknown, node: NodeData, rawResolvedJson?: unknown): boolean => {
       try {
         const currentJson = getJson();
         const root = JSON.parse(currentJson);
@@ -132,15 +133,37 @@ const useGitHubSearch = () => {
           return false;
         }
 
-        // Inject the resolved JSON under the code key
+        // Inject the compact-transformed JSON into the graph
         target[code] = resolvedJson;
         setJson(JSON.stringify(root, null, 2));
+
+        // Also merge the raw (pre-compact) JSON into originalJson + contents
+        // so that EvaluatePanel always has the full, up-to-date raw data.
+        if (rawResolvedJson !== undefined) {
+          try {
+            const origStr = getOriginalJson();
+            const origRoot = JSON.parse(origStr);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let origTarget: any = origRoot;
+            for (const segment of path) {
+              if (origTarget == null) break;
+              origTarget = origTarget[segment];
+            }
+            if (origTarget && typeof origTarget === "object" && !Array.isArray(origTarget)) {
+              origTarget[code] = rawResolvedJson;
+              const mergedRaw = JSON.stringify(origRoot, null, 2);
+              setOriginalJson(mergedRaw);
+              useFile.setState({ contents: mergedRaw });
+            }
+          } catch { /* ignore — raw sync is best-effort */ }
+        }
+
         return true;
       } catch {
         return false;
       }
     },
-    [getJson, setJson]
+    [getJson, setJson, getOriginalJson, setOriginalJson]
   );
 
   const findAndLoad = React.useCallback(
@@ -232,25 +255,24 @@ const useGitHubSearch = () => {
 
         const jsonContent = JSON.stringify(parsedContent, null, 2);
 
-        // Always store original (pre-transform) JSON for NodeModal
-        setOriginalJson(jsonContent);
-
-        const finalContent = hasPolicyConditions(jsonContent)
-          ? applyPolicyTransform(jsonContent)
-          : jsonContent;
-        const finalParsed = JSON.parse(finalContent);
-
         if (node) {
-          // Merge: inject the resolved JSON into the current graph at the clicked node's path
-          const merged = mergeIntoGraph(value, finalParsed, node);
+          // Merge: inject the resolved JSON into the current graph at the clicked node's path.
+          // Compact version goes to the graph; raw version syncs to originalJson + contents.
+          const compactContent = hasPolicyConditions(jsonContent)
+            ? applyPolicyTransform(jsonContent)
+            : jsonContent;
+          const compactParsed = JSON.parse(compactContent);
+          const merged = mergeIntoGraph(value, compactParsed, node, parsedContent);
           if (merged) {
             toast.success(`เชื่อมต่อ ${value} เข้ากับ node สำเร็จ\nจาก ${source}`, { id: toastId, duration: 3000 });
           } else {
-            setContents({ contents: finalContent });
+            // Merge failed — load as standalone instead
+            setContents({ contents: jsonContent });
             toast.success(`โหลด ${policyType}: ${fileData.name} สำเร็จ (แสดงแทน)\nจาก ${source}`, { id: toastId });
           }
         } else {
-          setContents({ contents: finalContent });
+          // Standalone load — pass raw JSON; setContents handles compact transform + originalJson.
+          setContents({ contents: jsonContent });
           toast.success(`โหลด ${policyType}: ${fileData.name} สำเร็จ\nจาก ${source}`, { id: toastId });
         }
       } catch (err: unknown) {

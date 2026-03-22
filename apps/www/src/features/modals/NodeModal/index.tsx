@@ -53,8 +53,9 @@ const safeParseOriginalRoot = (originalJson: string): OriginalRoot | null => {
 
 /**
  * For policyCondition nodes:
- * Navigate originalJson.policyCondition[idx].policyConditionStatement
- * Handles both single-group (flat array) and multi-group ({ "Group N (AND)": [...] }) cases.
+ * Navigate originalJson using the node's full path up to the policyCondition array,
+ * then find the correct condition item.
+ * Handles both single-group (flat array) and multi-group cases.
  */
 const getConditionOriginal = (
   path: NonNullable<NodeData["path"]>,
@@ -63,7 +64,17 @@ const getConditionOriginal = (
   const pcIdx = path.findIndex(seg => seg === "policyCondition");
   if (pcIdx === -1) return null;
 
-  const pcArray = root["policyCondition"] as Array<Record<string, unknown>> | undefined;
+  // Navigate from root through all path segments BEFORE "policyCondition"
+  // This handles nested conditions like root.PLRLxxx.policyCondition
+  let target: unknown = root;
+  for (let i = 0; i < pcIdx; i++) {
+    if (target == null || typeof target !== "object") return null;
+    target = (target as Record<string | number, unknown>)[path[i]];
+  }
+
+  const pcArray = (target as Record<string, unknown>)?.["policyCondition"] as
+    | Array<Record<string, unknown>>
+    | undefined;
   if (!Array.isArray(pcArray)) return null;
 
   const nextSeg = path[pcIdx + 1];
@@ -93,8 +104,8 @@ const getConditionOriginal = (
 
 /**
  * For policyActionStatement nodes:
- * Navigate originalJson.policyAction[idx].policyActionStatement
- * Also handles policyActionStatement directly at root level.
+ * Navigate originalJson using the node's full path up to policyAction,
+ * then extract policyActionStatement.
  * Returns { statement, policyValue }
  */
 const getActionOriginal = (
@@ -102,7 +113,18 @@ const getActionOriginal = (
   root: OriginalRoot
 ): { statement: string | null; policyValue: string | null } => {
   const paIdx = path.findIndex(seg => seg === "policyAction");
-  const paArray = root["policyAction"] as Array<Record<string, unknown>> | undefined;
+
+  // Navigate from root through all path segments BEFORE "policyAction"
+  let parent: unknown = root;
+  const navEnd = paIdx !== -1 ? paIdx : 0;
+  for (let i = 0; i < navEnd; i++) {
+    if (parent == null || typeof parent !== "object") break;
+    parent = (parent as Record<string | number, unknown>)[path[i]];
+  }
+
+  const paArray = (parent as Record<string, unknown>)?.["policyAction"] as
+    | Array<Record<string, unknown>>
+    | undefined;
 
   let stmt: Record<string, unknown> | undefined;
 
@@ -111,8 +133,10 @@ const getActionOriginal = (
     const item = typeof itemIdx === "number" ? paArray[itemIdx] : paArray[0];
     stmt = item?.["policyActionStatement"] as Record<string, unknown> | undefined;
   } else {
-    // Fallback: policyActionStatement directly at root
-    stmt = root["policyActionStatement"] as Record<string, unknown> | undefined;
+    // Fallback: policyActionStatement directly at parent
+    stmt = (parent as Record<string, unknown>)?.["policyActionStatement"] as
+      | Record<string, unknown>
+      | undefined;
   }
 
   const pv = stmt?.["policyValue"];

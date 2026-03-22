@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useMantineColorScheme } from "@mantine/core";
+import { useMantineColorScheme, Tabs } from "@mantine/core";
 import "@mantine/dropzone/styles.css";
 import styled, { ThemeProvider } from "styled-components";
 import { Allotment } from "allotment";
@@ -61,6 +61,11 @@ const LiveEditor = dynamic(() => import("../features/editor/LiveEditor"), {
   ssr: false,
 });
 
+const EvaluatePanel = dynamic(
+  () => import("../features/editor/EvaluatePanel").then(m => ({ default: m.EvaluatePanel })),
+  { ssr: false }
+);
+
 const EditorPage = () => {
   const { query, isReady } = useRouter();
   const { setColorScheme } = useMantineColorScheme();
@@ -101,8 +106,27 @@ const EditorPage = () => {
                   visible={!fullscreen}
                 >
                   <StyledTextEditor>
-                    <TextEditor />
-                    <BottomBar />
+                    <Tabs
+                      defaultValue="policy"
+                      style={{ display: "flex", flexDirection: "column", height: "100%" }}
+                    >
+                      <Tabs.List>
+                        <Tabs.Tab value="policy">Policy</Tabs.Tab>
+                        <Tabs.Tab value="evaluate">Evaluate</Tabs.Tab>
+                      </Tabs.List>
+                      <Tabs.Panel
+                        value="policy"
+                        style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}
+                      >
+                        <TextEditor />
+                        <BottomBar />
+                      </Tabs.Panel>
+                      <Tabs.Panel
+                        value="evaluate"
+                        style={{ flex: 1, overflow: "hidden" }}                        keepMounted                      >
+                        <EvaluatePanel />
+                      </Tabs.Panel>
+                    </Tabs>
                   </StyledTextEditor>
                 </Allotment.Pane>
                 <Allotment.Pane minSize={0}>

@@ -41,7 +41,7 @@ export const GraphView = ({ isWidget = false }: GraphProps) => {
   const gesturesEnabled = useConfig(state => state.gesturesEnabled);
   const rulersEnabled = useConfig(state => state.rulersEnabled);
   const darkmodeEnabled = useConfig(state => state.darkmodeEnabled);
-  const json = useJson(state => state.json);
+  const json = useJson(state => state.evalJson ?? state.json);
   const setVisible = useModal(state => state.setVisible);
 
   const blurOnClick = React.useCallback(() => {

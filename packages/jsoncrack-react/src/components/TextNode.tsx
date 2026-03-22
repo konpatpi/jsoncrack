@@ -35,6 +35,14 @@ const TextNodeBase = ({ node, x, y }: TextNodeProps) => {
           const hasKey = sepIdx !== -1;
           const keyPart = hasKey ? line.slice(0, sepIdx) : null;
           const valPart = hasKey ? line.slice(sepIdx + 2) : line;
+
+          let valueColor = getTextColor({ value: valPart, type: "string" });
+          if (keyPart === "result") {
+            if (valPart === "PASS") valueColor = "var(--eval-pass-stroke)";
+            else if (valPart === "FAIL") valueColor = "var(--eval-fail-stroke)";
+            else if (valPart === "ERROR") valueColor = "var(--eval-error-stroke)";
+          }
+
           return (
             <span
               key={i}
@@ -50,7 +58,7 @@ const TextNodeBase = ({ node, x, y }: TextNodeProps) => {
                   {keyPart}:{" "}
                 </span>
               )}
-              <span style={{ color: getTextColor({ value: valPart, type: "string" }) }}>
+              <span style={{ color: valueColor }}>
                 <TextRenderer>{valPart}</TextRenderer>
               </span>
             </span>
