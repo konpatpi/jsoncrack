@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import type { ModalProps } from "@mantine/core";
 import {
   Modal,
@@ -33,6 +33,13 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
   const [validUser, setValidUser] = React.useState<string | null>(null);
   const [repoAccess, setRepoAccess] = React.useState<"ok" | "denied" | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Pre-fill token when modal opens if one is already saved
+  React.useEffect(() => {
+    if (opened && storedToken) {
+      setInputValue(storedToken);
+    }
+  }, [opened, storedToken]);
 
   const hasToken = Boolean(storedToken);
 
@@ -73,9 +80,9 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
 
       if (!userRes.ok) {
         if (userRes.status === 401) {
-          setError("Token ไม่ถูกต้อง หรือหมดอายุแล้ว กรุณาตรวจสอบและลองใหม่อีกครั้ง");
+          setError("Token is invalid or has expired. Please check and try again.");
         } else {
-          setError(`GitHub API ตอบกลับ: ${userRes.status} ${userRes.statusText}`);
+          setError(`GitHub API responded: ${userRes.status} ${userRes.statusText}`);
         }
         return;
       }
@@ -88,16 +95,16 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
 
       if (!hasRepoAccess) {
         setError(
-          `Token ไม่มีสิทธิ์เข้าถึง repo "${GITHUB_REPO}"\nกรุณาตรวจสอบ scope หรือขอ invitation จาก repo owner`
+          `Token does not have access to repo "${GITHUB_REPO}".\nPlease check the token scope or request an invitation from the repo owner.`
         );
         return;
       }
 
       setToken(token);
       setValidUser(user.login as string);
-      setInputValue("");
+      // keep input populated so user can see their saved token
     } catch {
-      setError("ไม่สามารถเชื่อมต่อ GitHub API ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต");
+      setError("Unable to connect to GitHub API. Please check your internet connection.");
     } finally {
       setValidating(false);
     }
@@ -138,30 +145,30 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
         <Group>
           <Text size="sm" c="dimmed">Token:</Text>
           {hasToken ? (
-            <Badge color="green" leftSection={<LuCheck size={12} />}>บันทึกแล้ว</Badge>
+            <Badge color="green" leftSection={<LuCheck size={12} />}>Saved</Badge>
           ) : (
-            <Badge color="gray" leftSection={<LuCircleX size={12} />}>ยังไม่มี</Badge>
+            <Badge color="gray" leftSection={<LuCircleX size={12} />}>Not set</Badge>
           )}
           <Text size="sm" c="dimmed">Repo Access:</Text>
           {repoAccess === "ok" ? (
-            <Badge color="green" leftSection={<LuCheck size={12} />}>ผ่าน</Badge>
+            <Badge color="green" leftSection={<LuCheck size={12} />}>Granted</Badge>
           ) : repoAccess === "denied" ? (
-            <Badge color="red" leftSection={<LuCircleX size={12} />}>ไม่มีสิทธิ์</Badge>
+            <Badge color="red" leftSection={<LuCircleX size={12} />}>Denied</Badge>
           ) : (
-            <Badge color="gray">ยังไม่ทดสอบ</Badge>
+            <Badge color="gray">Not tested</Badge>
           )}
         </Group>
 
         {/* Success state */}
         {validUser && (
-          <Alert color="green" icon={<LuCheck />} title="ตั้งค่าสำเร็จ">
-            {`ยืนยันตัวตน: @${validUser} — มีสิทธิ์เข้าถึง repo สำเร็จ`}
+          <Alert color="green" icon={<LuCheck />} title="Token saved">
+            {`Authenticated as @${validUser} — repo access granted.`}
           </Alert>
         )}
 
         {/* Error */}
         {error && (
-          <Alert color="red" icon={<LuCircleX />} title="เกิดข้อผิดพลาด">
+          <Alert color="red" icon={<LuCircleX />} title="Error">
             <Text size="xs" style={{ whiteSpace: "pre-line" }}>{error}</Text>
           </Alert>
         )}
@@ -171,17 +178,17 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
         {/* How to generate token */}
         <Stack gap="xs">
           <Text size="sm" fw={600}>
-            วิธีสร้าง Personal Access Token
+            How to generate a Personal Access Token
           </Text>
           <List size="sm" spacing="xs">
             <List.Item>
-              ไปที่{" "}
+              Go to{" "}
               <Anchor href={TOKEN_URL} target="_blank" rel="noopener" size="sm">
-                GitHub → Settings → Tokens (classic)
+                GitHub &rarr; Settings &rarr; Tokens (classic)
               </Anchor>
             </List.Item>
-            <List.Item>เลือก scope: <strong>repo</strong> (เข้าถึง private repo ได้)</List.Item>
-            <List.Item>คลิก Generate token แล้ว copy มาใส่ด้านล่าง</List.Item>
+            <List.Item>Select scope: <strong>repo</strong> (access private repos)</List.Item>
+            <List.Item>Click Generate token and paste it below.</List.Item>
           </List>
         </Stack>
 
@@ -199,9 +206,9 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
         />
 
         {/* Security note */}
-        <Alert color="blue" icon={<LuShieldCheck />} title="ความปลอดภัย">
+        <Alert color="blue" icon={<LuShieldCheck />} title="Security">
           <Text size="xs">
-            Token ถูกเก็บใน <strong>localStorage</strong> เท่านั้น ไม่ส่งไปยัง server ใดๆ
+            Your token is stored in <strong>localStorage</strong> only and never sent to any server.
           </Text>
         </Alert>
 
@@ -209,7 +216,7 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
         <Group justify="space-between">
           {hasToken && (
             <Button variant="subtle" color="red" onClick={handleRemove} size="sm">
-              ลบ Token ออก
+              Remove Token
             </Button>
           )}
           <Group ml="auto">
@@ -221,11 +228,11 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
                 loading={testingRepo}
                 onClick={handleTestExistingToken}
               >
-                ทดสอบ Repo Access
+                Test Repo Access
               </Button>
             )}
             <Button variant="default" onClick={handleClose} size="sm">
-              ปิด
+              Close
             </Button>
             <Button
               onClick={validateAndSave}
@@ -233,7 +240,7 @@ export const GitHubModal = ({ opened, onClose }: ModalProps) => {
               disabled={!inputValue.trim()}
               size="sm"
             >
-              ตรวจสอบและบันทึก
+              Verify &amp; Save
             </Button>
           </Group>
         </Group>

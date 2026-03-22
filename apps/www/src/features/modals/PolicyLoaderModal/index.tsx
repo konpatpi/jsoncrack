@@ -106,7 +106,7 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
 
   const handleSaveConfig = () => {
     if (!productLine || !selectedActivity) {
-      setError("กรุณาเลือก Product Line และ Activity Repository");
+      setError("Please select a Product Line and Activity Repository.");
       return;
     }
 
@@ -119,7 +119,7 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
       searchText: savedConfig.searchText,
     });
 
-    setSuccess("บันทึก configuration สำเร็จ");
+    setSuccess("Configuration saved successfully.");
 
     // Close modal after short delay
     setTimeout(() => {
@@ -152,9 +152,9 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
       <Stack gap="md">
         {/* GitHub Token Status */}
         {!hasToken && (
-          <Alert color="yellow" icon={<LuInfo />} title="ต้องตั้งค่า GitHub Token ก่อน">
+          <Alert color="yellow" icon={<LuInfo />} title="GitHub Token Required">
             <Text size="sm">
-              กรุณาไปที่ GitHub Configuration เพื่อตั้งค่า Personal Access Token ก่อนใช้งาน
+              Please go to GitHub Configuration to set up your Personal Access Token first.
             </Text>
           </Alert>
         )}
@@ -162,7 +162,7 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
         {/* Product Line Selection */}
         <Select
           label="Product Line"
-          placeholder="เลือก Product Line"
+          placeholder="Select Product Line"
           data={productLineOptions}
           value={productLine}
           onChange={value => setProductLine(value as ProductLine | null)}
@@ -175,12 +175,12 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
           label="Activity Repository"
           placeholder={
             loadingActivities
-              ? "กำลังโหลด activities..."
+              ? "Loading activities..."
               : !productLine
-                ? "เลือก Product Line ก่อน"
+                ? "Select a Product Line first"
                 : activities.length === 0
-                  ? "ไม่พบ activity repos"
-                  : "เลือก Activity"
+                  ? "No activity repos found"
+                  : "Select Activity"
           }
           data={activities.map(repo => ({
             value: repo.full_name,
@@ -193,36 +193,36 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
           leftSection={loadingActivities ? <Loader size="xs" /> : undefined}
         />
 
-        {/* Activity Branch Selection */}
-        <Select
-          label="Activity Branch"
-          placeholder="เลือก Branch สำหรับ Activity"
-          data={branchOptions}
-          value={selectedActivityBranch}
-          onChange={value => setSelectedActivityBranch(value || "develop")}
-          disabled={!hasToken}
-        />
-
         {/* Common Branch Selection */}
         <Select
           label="Common Branch"
-          placeholder="เลือก Branch สำหรับ Common"
+          placeholder="Select branch for Common"
           data={branchOptions}
           value={selectedCommonBranch}
           onChange={value => setSelectedCommonBranch(value || "develop")}
           disabled={!hasToken}
         />
 
+        {/* Activity Branch Selection */}
+        <Select
+          label="Activity Branch"
+          placeholder="Select branch for Activity"
+          data={branchOptions}
+          value={selectedActivityBranch}
+          onChange={value => setSelectedActivityBranch(value || "develop")}
+          disabled={!hasToken}
+        />
+
         {/* Error Alert */}
         {error && (
-          <Alert color="red" icon={<LuInfo />} title="เกิดข้อผิดพลาด">
+          <Alert color="red" icon={<LuInfo />} title="Error">
             <Text size="xs" style={{ whiteSpace: "pre-wrap" }}>{error}</Text>
           </Alert>
         )}
 
         {/* Success Alert */}
         {success && (
-          <Alert color="green" icon={<LuCheck />} title="สำเร็จ">
+          <Alert color="green" icon={<LuCheck />} title="Success">
             <Text size="xs">{success}</Text>
           </Alert>
         )}
@@ -230,7 +230,7 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
         {/* Actions */}
         <Group justify="flex-end">
           <Button variant="default" onClick={handleClose} size="sm">
-            ยกเลิก
+            Cancel
           </Button>
           <Button
             onClick={handleSaveConfig}
@@ -238,7 +238,7 @@ export const PolicyLoaderModal = ({ opened, onClose }: ModalProps) => {
             size="sm"
             leftSection={<FaCog size={16} />}
           >
-            บันทึก Configuration
+            Save Configuration
           </Button>
         </Group>
       </Stack>
