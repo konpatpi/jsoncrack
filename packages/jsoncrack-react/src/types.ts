@@ -28,6 +28,8 @@ export interface EdgeData {
   text: string | null;
   fromPort?: string;
   color?: string;
+  /** Y-offset (px) of the source port within the parent node, used to correct ELK's default port placement */
+  portY?: number;
 }
 
 export interface GraphData {

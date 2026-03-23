@@ -2,6 +2,8 @@ import { getNodePath, parseTree, type Node, type ParseError } from "jsonc-parser
 import type { EdgeData, GraphData, NodeData, NodeRow } from "./types";
 import { calculateNodeSize } from "./utils/calculateNodeSize";
 
+const ROW_HEIGHT = 30;
+
 // Palette for port-connected edges — distinct, readable on both light/dark backgrounds
 const PORT_COLORS = [
   "#60a5fa", // blue
@@ -99,6 +101,9 @@ export const parseGraph = (json: string): ParseGraphResult => {
 
         const portId = `${id}-port-${key}`;
         const portColor = PORT_COLORS[portColorIndex++ % PORT_COLORS.length];
+        // rowIndex in visibleText = count of non-null rows already in text (null rows are filtered out)
+        const portRowIndex = text.filter(r => r.value !== null).length;
+        const portY = portRowIndex * ROW_HEIGHT + ROW_HEIGHT / 2;
 
         text.push({
           key,
@@ -118,6 +123,7 @@ export const parseGraph = (json: string): ParseGraphResult => {
             text: key,
             fromPort: portId,
             color: portColor,
+            portY,
           });
         });
       } else if (type === "object") {
@@ -125,6 +131,9 @@ export const parseGraph = (json: string): ParseGraphResult => {
 
         const portId = `${id}-port-${key}`;
         const portColor = PORT_COLORS[portColorIndex++ % PORT_COLORS.length];
+        // rowIndex in visibleText = count of non-null rows already in text (null rows are filtered out)
+        const portRowIndex = text.filter(r => r.value !== null).length;
+        const portY = portRowIndex * ROW_HEIGHT + ROW_HEIGHT / 2;
 
         text.push({
           key,
@@ -142,6 +151,7 @@ export const parseGraph = (json: string): ParseGraphResult => {
             text: key,
             fromPort: portId,
             color: portColor,
+            portY,
           });
         }
       } else {
@@ -225,7 +235,6 @@ export const parseGraph = (json: string): ParseGraphResult => {
 
       const { width, height } = calculateNodeSize(displayText);
 
-      const ROW_HEIGHT = 30;
       const portsWithRowIndex: Array<{ id: string; rowIndex: number }> = [];
       visibleText.forEach((row, rowIndex) => {
         if (row.portId) portsWithRowIndex.push({ id: row.portId, rowIndex });
