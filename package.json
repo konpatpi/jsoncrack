@@ -39,6 +39,9 @@
             "esbuild",
             "sharp",
             "unrs-resolver"
-        ]
+        ],
+        "patchedDependencies": {
+            "reaflow@5.4.1": "patches/reaflow@5.4.1.patch"
+        }
     }
 }

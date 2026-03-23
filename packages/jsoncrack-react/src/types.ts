@@ -6,6 +6,8 @@ export interface NodeRow {
   type: Node["type"];
   childrenCount?: number;
   to?: string[];
+  portId?: string;
+  portColor?: string;
 }
 
 export interface NodeData {
@@ -13,6 +15,7 @@ export interface NodeData {
   text: Array<NodeRow>;
   width: number;
   height: number;
+  ports?: Array<{ id: string; side: "EAST" | "WEST"; width: number; height: number; hidden?: boolean; index?: number; x?: number; y?: number }>;
   path?: JSONPath;
   parentKey?: string;
   parentType?: string;
@@ -23,6 +26,8 @@ export interface EdgeData {
   from: string;
   to: string;
   text: string | null;
+  fromPort?: string;
+  color?: string;
 }
 
 export interface GraphData {

@@ -5,8 +5,13 @@ import type { NodeData } from "../types";
 import { ObjectNode } from "./ObjectNode";
 import { TextNode } from "./TextNode";
 
+const ROW_HEIGHT = 30;
+const BTN_R = 8;
+
 type CustomNodeProps = NodeProps<NodeData> & {
   onNodeClick?: (node: NodeData) => void;
+  collapsedFieldKeys?: Set<string>;
+  onToggleField?: (nodeId: string, fieldKey: string) => void;
 };
 
 function getEvalStatus(
@@ -23,12 +28,21 @@ function getEvalStatus(
   return null;
 }
 
-const CustomNodeBase = ({ onNodeClick, ...nodeProps }: CustomNodeProps) => {
+const CustomNodeBase = ({ onNodeClick, collapsedFieldKeys, onToggleField, ...nodeProps }: CustomNodeProps) => {
   const handleNodeClick = React.useCallback(
     (_: React.MouseEvent<SVGGElement, MouseEvent>, data: NodeData) => {
       onNodeClick?.(data);
     },
     [onNodeClick]
+  );
+
+  const nodeId = (nodeProps.properties as NodeData).id;
+
+  const handleToggleField = React.useCallback(
+    (fieldKey: string) => {
+      onToggleField?.(nodeId, fieldKey);
+    },
+    [nodeId, onToggleField]
   );
 
   const evalStatus = getEvalStatus(nodeProps.properties as NodeData);
@@ -75,18 +89,73 @@ const CustomNodeBase = ({ onNodeClick, ...nodeProps }: CustomNodeProps) => {
       }}
       style={{ fill: fillStyle, stroke: strokeStyle, strokeWidth }}
     >
-      {({ node, x, y }) => {
-        const hasKey = nodeProps.properties.text[0]?.key;
+      {({ node, x, y, width }) => {
+        const nodeData = nodeProps.properties as NodeData;
+        const hasKey = nodeData.text[0]?.key;
+
         if (!hasKey) {
           return (
             <g ref={innerRef}>
-              <TextNode node={nodeProps.properties as NodeData} x={x} y={y} />
+              <TextNode node={nodeData} x={x} y={y} />
             </g>
           );
         }
+
+        // SVG collapse buttons — siblings of foreignObject, in SVG space
+        // x = width (right border center), y = row_center
+        const buttons = onToggleField
+          ? nodeData.text.map((row, rowIndex) => {
+              if (!row.key || !row.to?.length) return null;
+              const cy = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2;
+              const isCollapsed = collapsedFieldKeys?.has(row.key) ?? false;
+              return (
+                <g
+                  key={`btn-${rowIndex}`}
+                  transform={`translate(${width},${cy})`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleField(row.key!);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <circle
+                    r={BTN_R}
+                    fill={fillStyle}
+                    stroke={row.portColor ?? strokeStyle}
+                    strokeWidth="2"
+                  />
+                  {/* − line */}
+                  <line
+                    x1={-(BTN_R - 3)} y1="0"
+                    x2={BTN_R - 3} y2="0"
+                    stroke={row.portColor ?? "var(--node-key)"}
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                  {/* + vertical line (only when collapsed) */}
+                  {isCollapsed && (
+                    <line
+                      x1="0" y1={-(BTN_R - 3)}
+                      x2="0" y2={BTN_R - 3}
+                      stroke={row.portColor ?? "var(--node-key)"}
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  )}
+                </g>
+              );
+            })
+          : null;
+
         return (
           <g ref={innerRef}>
-            <ObjectNode node={node as NodeData} x={x} y={y} />
+            <ObjectNode
+              node={node as NodeData}
+              x={x}
+              y={y}
+              layoutWidth={width}
+            />
+            {buttons}
           </g>
         );
       }}

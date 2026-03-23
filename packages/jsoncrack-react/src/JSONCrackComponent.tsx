@@ -12,13 +12,28 @@ import { CustomEdge } from "./components/CustomEdge";
 import { CustomNode } from "./components/CustomNode";
 import { parseGraph } from "./parser";
 import { themes } from "./theme";
-import type { CanvasThemeMode, GraphData, LayoutDirection, NodeData } from "./types";
+import type { CanvasThemeMode, EdgeData, GraphData, LayoutDirection, NodeData } from "./types";
 
 const layoutOptions = {
   "elk.layered.compaction.postCompaction.strategy": "EDGE_LENGTH",
   "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
   "elk.spacing.edgeLabel": "15",
 };
+
+function getDescendants(nodeId: string, allEdges: EdgeData[]): Set<string> {
+  const visited = new Set<string>();
+  const queue = [nodeId];
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const edge of allEdges) {
+      if (edge.from === current && !visited.has(edge.to)) {
+        visited.add(edge.to);
+        queue.push(edge.to);
+      }
+    }
+  }
+  return visited;
+}
 
 const objectJsonCache = new WeakMap<object, string>();
 
@@ -90,6 +105,7 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
     const [nodes, setNodes] = React.useState<GraphData["nodes"]>([]);
     const [edges, setEdges] = React.useState<GraphData["edges"]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [collapsedFields, setCollapsedFields] = React.useState<Map<string, Set<string>>>(new Map());
     const [aboveSupportedLimit, setAboveSupportedLimit] = React.useState(false);
     const [totalNodes, setTotalNodes] = React.useState(0);
     const [paneWidth, setPaneWidth] = React.useState(2000);
@@ -236,6 +252,46 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
       return targetById;
     }, [edges]);
 
+    const hiddenNodes = React.useMemo(() => {
+      const hidden = new Set<string>();
+      for (const [nodeId, fieldKeys] of collapsedFields) {
+        for (const fieldKey of fieldKeys) {
+          for (const edge of edges) {
+            if (edge.from === nodeId && edge.text === fieldKey) {
+              hidden.add(edge.to);
+              getDescendants(edge.to, edges).forEach(id => hidden.add(id));
+            }
+          }
+        }
+      }
+      return hidden;
+    }, [collapsedFields, edges]);
+
+    const visibleNodes = React.useMemo(
+      () => nodes.filter(n => !hiddenNodes.has(n.id)),
+      [nodes, hiddenNodes]
+    );
+
+    const visibleEdges = React.useMemo(
+      () => edges.filter(e => !hiddenNodes.has(e.from) && !hiddenNodes.has(e.to)),
+      [edges, hiddenNodes]
+    );
+
+    const handleToggleField = React.useCallback((nodeId: string, fieldKey: string) => {
+      setCollapsedFields(prev => {
+        const next = new Map(prev);
+        const fields = new Set(next.get(nodeId) ?? []);
+        if (fields.has(fieldKey)) {
+          fields.delete(fieldKey);
+        } else {
+          fields.add(fieldKey);
+        }
+        if (fields.size === 0) next.delete(nodeId);
+        else next.set(nodeId, fields);
+        return next;
+      });
+    }, []);
+
     const onLayoutChange = React.useCallback(
       (layout: ElkRoot) => {
         if (!layout.width || !layout.height) {
@@ -359,7 +415,14 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
           <Canvas
             className="jsoncrack-canvas"
             onLayoutChange={onLayoutChange}
-            node={nodeProps => <CustomNode {...nodeProps} onNodeClick={onNodeClick} />}
+            node={nodeProps => (
+              <CustomNode
+                {...nodeProps}
+                onNodeClick={onNodeClick}
+                collapsedFieldKeys={collapsedFields.get((nodeProps.properties as NodeData).id)}
+                onToggleField={handleToggleField}
+              />
+            )}
             edge={edgeProps => (
               <CustomEdge
                 {...edgeProps}
@@ -368,8 +431,8 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
                 hostElement={containerRef.current}
               />
             )}
-            nodes={nodes}
-            edges={edges}
+            nodes={visibleNodes}
+            edges={visibleEdges}
             arrow={null}
             maxHeight={paneHeight}
             maxWidth={paneWidth}

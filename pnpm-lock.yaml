@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  reaflow@5.4.1:
+    hash: 9c636bc534a5ee3aff1145328da098c0cd209062a716750404f508b0ec91b7af
+    path: patches/reaflow@5.4.1.patch
+
 importers:
 
   .:
@@ -182,7 +187,7 @@ importers:
         version: 0.11.0(react@19.2.4)
       reaflow:
         specifier: 5.4.1
-        version: 5.4.1(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(prop-types@15.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 5.4.1(patch_hash=9c636bc534a5ee3aff1145328da098c0cd209062a716750404f508b0ec91b7af)(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(prop-types@15.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       shiki:
         specifier: ^4.0.2
         version: 4.0.2
@@ -258,7 +263,7 @@ importers:
         version: 0.11.0(react@19.2.4)
       reaflow:
         specifier: 5.4.1
-        version: 5.4.1(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(prop-types@15.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+        version: 5.4.1(patch_hash=9c636bc534a5ee3aff1145328da098c0cd209062a716750404f508b0ec91b7af)(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(prop-types@15.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       use-long-press:
         specifier: ^3.3.0
         version: 3.3.0(react@19.2.4)
@@ -5817,7 +5822,7 @@ snapshots:
 
   react@19.2.4: {}
 
-  reaflow@5.4.1(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(prop-types@15.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+  reaflow@5.4.1(patch_hash=9c636bc534a5ee3aff1145328da098c0cd209062a716750404f508b0ec91b7af)(@emotion/is-prop-valid@1.4.0)(@types/react@19.2.14)(prop-types@15.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
       '@juggle/resize-observer': 3.4.0
       calculate-size: 1.1.1

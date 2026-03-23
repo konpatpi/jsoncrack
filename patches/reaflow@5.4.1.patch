@@ -1,0 +1,30 @@
+diff --git a/dist/index.js b/dist/index.js
+index 0a3fa2a9b0240fc9b76e954b37d4eb037421ef2a..5b97be4286e85fe6c616b370144ba6bb556090bb 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -328,6 +328,10 @@ function mapNode(nodes, edges, node) {
+     edges: childEdges,
+     ports: node.ports ? node.ports.map((port2) => ({
+       id: port2.id,
++      x: port2.x,
++      y: port2.y,
++      width: port2.width ?? 0,
++      height: port2.height ?? 0,
+       properties: {
+         ...port2,
+         "port.side": port2.side,
+diff --git a/dist/index.umd.cjs b/dist/index.umd.cjs
+index b8bdc4217d3c8ce347eab41b6e5b445478ec4f0a..5ae576094b153c57201409f74361435bdbc54d54 100644
+--- a/dist/index.umd.cjs
++++ b/dist/index.umd.cjs
+@@ -316,6 +316,10 @@
+       edges: childEdges,
+       ports: node.ports ? node.ports.map((port2) => ({
+         id: port2.id,
++        x: port2.x,
++        y: port2.y,
++        width: port2.width ?? 0,
++        height: port2.height ?? 0,
+         properties: {
+           ...port2,
+           "port.side": port2.side,

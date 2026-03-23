@@ -8,6 +8,7 @@ type ObjectNodeProps = {
   node: NodeData;
   x: number;
   y: number;
+  layoutWidth?: number;
 };
 
 type RowProps = {
@@ -49,18 +50,24 @@ const Row = ({ row, x, y, index }: RowProps) => {
   );
 };
 
-const ObjectNodeBase = ({ node, x, y }: ObjectNodeProps) => (
+const ObjectNodeBase = ({ node, x, y, layoutWidth }: ObjectNodeProps) => (
   <foreignObject
     className={`${styles.foreignObject} ${styles.objectForeignObject}`}
     data-id={`node-${node.id}`}
-    width={node.width}
+    width={layoutWidth ?? node.width}
     height={node.height}
     x={0}
     y={0}
   >
     {node.text.map((row, index) => (
-        <Row key={`${node.id}-${index}`} row={row} x={x} y={y} index={index} />
-      ))}
+      <Row
+        key={`${node.id}-${index}`}
+        row={row}
+        x={x}
+        y={y}
+        index={index}
+      />
+    ))}
   </foreignObject>
 );
 
@@ -102,6 +109,7 @@ const propsAreEqual = (prev: ObjectNodeProps, next: ObjectNodeProps) => {
   return (
     prev.node.width === next.node.width &&
     prev.node.height === next.node.height &&
+    prev.layoutWidth === next.layoutWidth &&
     areRowsEqual(prev.node.text, next.node.text)
   );
 };

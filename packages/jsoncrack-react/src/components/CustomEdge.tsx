@@ -26,6 +26,7 @@ const isQueryRoot = (value: unknown): value is QueryRoot => {
 const CustomEdgeBase = ({ viewPort, edgeTargetById, hostElement, ...props }: CustomEdgeProps) => {
   const [hovered, setHovered] = React.useState(false);
   const edgeId = (props.properties as EdgeData | undefined)?.id;
+  const edgeColor = (props.properties as EdgeData | undefined)?.color;
 
   const handleClick = React.useCallback(() => {
     const targetNodeId = edgeId ? edgeTargetById.get(edgeId) : undefined;
@@ -56,8 +57,9 @@ const CustomEdgeBase = ({ viewPort, edgeTargetById, hostElement, ...props }: Cus
       onEnter={() => setHovered(true)}
       onLeave={() => setHovered(false)}
       style={{
-        stroke: hovered ? "#3B82F6" : "var(--edge-stroke)",
-        strokeWidth: 1.5,
+        stroke: hovered ? "#ffffff" : (edgeColor ?? "var(--edge-stroke)"),
+        strokeWidth: hovered ? 2 : 1.5,
+        opacity: hovered ? 1 : 0.85,
       }}
       {...props}
     />
