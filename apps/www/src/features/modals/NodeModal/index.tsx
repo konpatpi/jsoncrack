@@ -167,6 +167,26 @@ const getRuleOriginal = (
   }
 };
 
+/**
+ * For any generic node: navigate originalJson using the node's path to get
+ * the pre-transform value at that location.
+ */
+const getGenericOriginal = (
+  path: NonNullable<NodeData["path"]>,
+  originalJson: string
+): string | null => {
+  try {
+    let target: unknown = JSON.parse(originalJson);
+    for (const seg of path) {
+      if (target == null || typeof target !== "object") return null;
+      target = (target as Record<string | number, unknown>)[seg];
+    }
+    return target !== undefined ? JSON.stringify(target, null, 2) : null;
+  } catch {
+    return null;
+  }
+};
+
 // ─── sub-component ──────────────────────────────────────────────────────────
 
 const OriginalJsonSection = ({ code }: { code: string }) => (
@@ -214,6 +234,12 @@ export const NodeModal = ({ opened, onClose }: ModalProps) => {
   const ruleOriginal =
     kind === "policyRule" && path
       ? getRuleOriginal(path, currentJson)
+      : null;
+
+  // For generic (non-policy) nodes: show original JSON when a transform exists
+  const genericOriginal =
+    kind === null && hasOriginal && path
+      ? getGenericOriginal(path, originalJson)
       : null;
 
   // Content override for policyActionStatement: no longer needed — transform already keeps only policyValue
@@ -270,6 +296,9 @@ export const NodeModal = ({ opened, onClose }: ModalProps) => {
 
         {/* ── Original JSON: policyRule ── */}
         {ruleOriginal && <OriginalJsonSection code={ruleOriginal} />}
+
+        {/* ── Original JSON: generic node (non-policy, when transform exists) ── */}
+        {genericOriginal && <OriginalJsonSection code={genericOriginal} />}
       </Stack>
     </Modal>
   );

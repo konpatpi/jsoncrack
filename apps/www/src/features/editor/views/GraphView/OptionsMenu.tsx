@@ -5,9 +5,8 @@ import styled from "styled-components";
 import type { LayoutDirection } from "jsoncrack-react";
 import { event as gaEvent } from "nextjs-google-analytics";
 import { BsCheck2 } from "react-icons/bs";
-import { LuImageDown, LuMenu } from "react-icons/lu";
+import { LuChevronsLeft, LuImageDown, LuMenu } from "react-icons/lu";
 import { TiFlowMerge } from "react-icons/ti";
-import { VscSplitHorizontal } from "react-icons/vsc";
 import useConfig from "../../../../store/useConfig";
 import { useModal } from "../../../../store/useModal";
 import useGraph from "./stores/useGraph";
@@ -80,7 +79,7 @@ export const OptionsMenu = () => {
         position: "absolute",
         top: "10px",
         left: "10px",
-        zIndex: 100,
+        zIndex: 9999,
       }}
     >
       {fullscreen && (
@@ -89,10 +88,10 @@ export const OptionsMenu = () => {
             aria-label="toggle-panel"
             size="lg"
             color="gray"
-            variant="light"
+            variant="filled"
             onClick={toggleEditor}
           >
-            <VscSplitHorizontal size="18" />
+            <LuChevronsLeft size="18" />
           </ActionIcon>
         </Tooltip>
       )}
