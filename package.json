@@ -12,7 +12,7 @@
     },
     "scripts": {
         "dev": "turbo run dev",
-        "dev:www": "turbo run dev --filter=www",
+        "dev:www": "turbo run dev --filter=www --force",
         "dev:vscode": "turbo run watch --filter=vscode",
         "build": "turbo run build",
         "build:www": "turbo run build --filter=www --force",

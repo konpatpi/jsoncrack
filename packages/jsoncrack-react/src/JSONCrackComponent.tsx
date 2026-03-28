@@ -1,11 +1,15 @@
 "use client";
 
 import React from "react";
+import ReactDOM from "react-dom";
 import type { ViewPort } from "react-zoomable-ui";
 import { Space } from "react-zoomable-ui";
 import { Canvas } from "reaflow";
 import type { ElkRoot } from "reaflow";
 import { useLongPress } from "use-long-press";
+
+const BTN_R = 8;
+const BTN_ROW_HEIGHT = 30;
 import styles from "./JSONCrackStyles.module.css";
 import { Controls } from "./components/Controls";
 import { CustomEdge } from "./components/CustomEdge";
@@ -110,9 +114,16 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
     const [totalNodes, setTotalNodes] = React.useState(0);
     const [paneWidth, setPaneWidth] = React.useState(2000);
     const [paneHeight, setPaneHeight] = React.useState(2000);
+    const [nodeLayoutMap, setNodeLayoutMap] = React.useState<Map<string, { x: number; y: number; width: number }>>(new Map());
+    const [btnPortalTarget, setBtnPortalTarget] = React.useState<SVGGElement | null>(null);
+    const [shouldFitCanvas, setShouldFitCanvas] = React.useState(true);
+    const [highlightedNodeIds, setHighlightedNodeIds] = React.useState<Set<string>>(new Set());
+    const [highlightedEdgeIds, setHighlightedEdgeIds] = React.useState<Set<string>>(new Set());
     const hasAutoFittedRef = React.useRef(false);
     const callbacksRef = React.useRef({ onParse, onParseError });
     const onViewportCreateRef = React.useRef(onViewportCreate);
+    const toggleStateRef = React.useRef<{ centerX: number; centerY: number; zoomFactor: number } | null>(null);
+    const pointerDownPosRef = React.useRef<{ x: number; y: number } | null>(null);
     const lastParsedInputRef = React.useRef<{
       jsonText: string;
       maxRenderableNodes: number;
@@ -252,6 +263,22 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
       return targetById;
     }, [edges]);
 
+    const edgeColorByNodeId = React.useMemo(() => {
+      const colorById = new Map<string, string>();
+      for (const edge of edges) {
+        colorById.set(edge.to, edge.color ?? "var(--edge-stroke)");
+      }
+      return colorById;
+    }, [edges]);
+
+    const parentByNodeId = React.useMemo(() => {
+      const map = new Map<string, string>();
+      for (const edge of edges) {
+        map.set(edge.to, edge.from);
+      }
+      return map;
+    }, [edges]);
+
     const hiddenNodes = React.useMemo(() => {
       const hidden = new Set<string>();
       for (const [nodeId, fieldKeys] of collapsedFields) {
@@ -278,6 +305,18 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
     );
 
     const handleToggleField = React.useCallback((nodeId: string, fieldKey: string) => {
+      // Prevent Canvas auto-fit on toggle
+      setShouldFitCanvas(false);
+      
+      // Capture current viewport center before toggling
+      if (viewPort) {
+        toggleStateRef.current = {
+          centerX: viewPort.centerX,
+          centerY: viewPort.centerY,
+          zoomFactor: viewPort.zoomFactor,
+        };
+      }
+      
       setCollapsedFields(prev => {
         const next = new Map(prev);
         const fields = new Set(next.get(nodeId) ?? []);
@@ -290,6 +329,53 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
         else next.set(nodeId, fields);
         return next;
       });
+    }, [viewPort]);
+
+    const handleNodeSingleClick = React.useCallback((node: NodeData) => {
+      // Check if this node is already highlighted
+      const isAlreadyHighlighted = highlightedNodeIds.has(node.id);
+      
+      // If already highlighted, clear everything (toggle off)
+      if (isAlreadyHighlighted) {
+        setHighlightedNodeIds(new Set());
+        setHighlightedEdgeIds(new Set());
+        return;
+      }
+      
+      // Otherwise, highlight path to root (existing logic)
+      const pathNodeIds = new Set<string>();
+      const pathEdgeIds = new Set<string>();
+      
+      let currentId: string | undefined = node.id;
+      while (currentId) {
+        pathNodeIds.add(currentId);
+        const parentId = parentByNodeId.get(currentId);
+        if (parentId) {
+          const connectingEdge = edges.find(e => e.from === parentId && e.to === currentId);
+          if (connectingEdge) pathEdgeIds.add(connectingEdge.id);
+        }
+        currentId = parentId;
+      }
+      
+      setHighlightedNodeIds(pathNodeIds);
+      setHighlightedEdgeIds(pathEdgeIds);
+    }, [highlightedNodeIds, parentByNodeId, edges]);
+
+    const handleCanvasClick = React.useCallback((event: React.MouseEvent) => {
+      // Clear highlight only when clicking on canvas background (not on nodes/edges)
+      const target = event.target as HTMLElement;
+      
+      // Check if click is on a node or its descendants
+      const isNodeClick = target.closest('[data-id^="node-"]') !== null;
+      
+      // Check if click is on an edge or its descendants  
+      const isEdgeClick = target.closest('[class*="edge-"]') !== null;
+      
+      // Only clear if clicking on actual background (not node or edge)
+      if (!isNodeClick && !isEdgeClick) {
+        setHighlightedNodeIds(new Set());
+        setHighlightedEdgeIds(new Set());
+      }
     }, []);
 
     const onLayoutChange = React.useCallback(
@@ -302,21 +388,52 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
         setPaneWidth(layout.width + 50);
         setPaneHeight(layout.height + 50);
 
-        setTimeout(() => {
-          window.requestAnimationFrame(() => {
-            const isFirstAutoFit = !hasAutoFittedRef.current;
-            const shouldAutoFit = centerOnLayout && isFirstAutoFit;
+        // Build node position map from ELK layout
+        if (layout.children?.length) {
+          const map = new Map<string, { x: number; y: number; width: number }>();
+          for (const child of layout.children as Array<{ id: string; x?: number; y?: number; width?: number }>) {
+            map.set(child.id, { x: child.x ?? 0, y: child.y ?? 0, width: child.width ?? 0 });
+          }
+          setNodeLayoutMap(map);
+        }
 
-            if (shouldAutoFit) {
-              centerView();
-              hasAutoFittedRef.current = true;
+        // Move (or create) the button overlay <g> to be the LAST child of the
+        // canvas SVG motion group — painted on top of all nodes AND edges.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const motionG = containerRef.current?.querySelector(
+              ".jsoncrack-canvas svg > g"
+            ) as SVGGElement | null;
+            if (!motionG) return;
+            let btnG = motionG.querySelector<SVGGElement>("#jsoncrack-btn-layer");
+            if (!btnG) {
+              btnG = document.createElementNS("http://www.w3.org/2000/svg", "g") as SVGGElement;
+              btnG.setAttribute("id", "jsoncrack-btn-layer");
             }
-
-            setLoading(false);
+            motionG.appendChild(btnG); // append = move to last = top of z-order
+            setBtnPortalTarget(prev => (prev === btnG ? prev : btnG));
           });
-        }, 0);
+        });
+
+        requestAnimationFrame(() => {
+          const isFirstAutoFit = !hasAutoFittedRef.current;
+          const shouldAutoFit = centerOnLayout && isFirstAutoFit;
+
+          if (shouldAutoFit) {
+            centerView();
+            hasAutoFittedRef.current = true;
+            setShouldFitCanvas(false); // Disable fit after first time
+          } else if (toggleStateRef.current && viewPort) {
+            // Restore viewport position after toggle to prevent jumping
+            const { centerX, centerY, zoomFactor } = toggleStateRef.current;
+            viewPort.camera?.recenter(centerX, centerY, zoomFactor);
+            toggleStateRef.current = null;
+          }
+
+          setLoading(false);
+        });
       },
-      [centerView, centerOnLayout]
+      [centerView, centerOnLayout, viewPort]
     );
 
     const onLongPress = React.useCallback(() => {
@@ -376,6 +493,25 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
         className={canvasClassName}
         style={canvasStyle}
         onContextMenu={event => event.preventDefault()}
+        onPointerDown={(e) => {
+          pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          // Check if this was a drag or a click
+          if (!pointerDownPosRef.current) return;
+          
+          const dx = e.clientX - pointerDownPosRef.current.x;
+          const dy = e.clientY - pointerDownPosRef.current.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          pointerDownPosRef.current = null;
+          
+          // If moved less than 5px, treat as click
+          if (distance < 5) {
+            handleCanvasClick(e);
+          }
+          // If moved more, it was a drag - don't clear highlight
+        }}
         {...bindLongPress()}
       >
         {showControls && (
@@ -419,8 +555,9 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
               <CustomNode
                 {...nodeProps}
                 onNodeClick={onNodeClick}
-                collapsedFieldKeys={collapsedFields.get((nodeProps.properties as NodeData).id)}
-                onToggleField={handleToggleField}
+                onNodeSingleClick={handleNodeSingleClick}
+                highlightedNodeIds={highlightedNodeIds}
+                incomingEdgeColor={edgeColorByNodeId.get((nodeProps.properties as NodeData).id)}
               />
             )}
             edge={edgeProps => (
@@ -429,6 +566,7 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
                 viewPort={viewPort}
                 edgeTargetById={edgeTargetById}
                 hostElement={containerRef.current}
+                highlightedEdgeIds={highlightedEdgeIds}
               />
             )}
             nodes={visibleNodes}
@@ -447,9 +585,61 @@ export const JSONCrack = React.forwardRef<JSONCrackRef, JSONCrackProps>(
             readonly
             dragEdge={null}
             dragNode={null}
-            fit
+            fit={shouldFitCanvas}
           />
         </Space>
+
+        {/* Button overlay portal — rendered AFTER edges in SVG DOM so buttons paint on top */}
+        {btnPortalTarget &&
+          ReactDOM.createPortal(
+            <>
+              {visibleNodes.map(nodeData => {
+                const layout = nodeLayoutMap.get(nodeData.id);
+                if (!layout) return null;
+                return nodeData.text.map((row, rowIndex) => {
+                  if (!row.key || !row.to?.length) return null;
+                  const cy = rowIndex * BTN_ROW_HEIGHT + BTN_ROW_HEIGHT / 2;
+                  const isCollapsed = collapsedFields.get(nodeData.id)?.has(row.key) ?? false;
+                  return (
+                    <g
+                      key={`overlay-${nodeData.id}-${rowIndex}`}
+                      transform={`translate(${layout.x + layout.width},${layout.y + cy})`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleToggleField(nodeData.id, row.key!);
+                      }}
+                      style={{ cursor: "pointer", outline: "none" }}
+                      tabIndex={-1}
+                    >
+                      <circle
+                        r={BTN_R}
+                        fill="var(--node-fill)"
+                        stroke={row.portColor ?? "var(--node-stroke)"}
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1={-(BTN_R - 3)} y1="0"
+                        x2={BTN_R - 3} y2="0"
+                        stroke={row.portColor ?? "var(--node-key)"}
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                      {isCollapsed && (
+                        <line
+                          x1="0" y1={-(BTN_R - 3)}
+                          x2="0" y2={BTN_R - 3}
+                          stroke={row.portColor ?? "var(--node-key)"}
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      )}
+                    </g>
+                  );
+                });
+              })}
+            </>,
+            btnPortalTarget
+          )}
       </div>
     );
   }

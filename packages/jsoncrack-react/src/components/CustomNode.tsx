@@ -5,13 +5,11 @@ import type { NodeData } from "../types";
 import { ObjectNode } from "./ObjectNode";
 import { TextNode } from "./TextNode";
 
-const ROW_HEIGHT = 30;
-const BTN_R = 8;
-
 type CustomNodeProps = NodeProps<NodeData> & {
   onNodeClick?: (node: NodeData) => void;
-  collapsedFieldKeys?: Set<string>;
-  onToggleField?: (nodeId: string, fieldKey: string) => void;
+  onNodeSingleClick?: (node: NodeData) => void;
+  highlightedNodeIds?: Set<string>;
+  incomingEdgeColor?: string;
 };
 
 function getEvalStatus(
@@ -28,28 +26,56 @@ function getEvalStatus(
   return null;
 }
 
-const CustomNodeBase = ({ onNodeClick, collapsedFieldKeys, onToggleField, ...nodeProps }: CustomNodeProps) => {
-  const handleNodeClick = React.useCallback(
-    (_: React.MouseEvent<SVGGElement, MouseEvent>, data: NodeData) => {
-      onNodeClick?.(data);
+const CustomNodeBase = ({ onNodeClick, onNodeSingleClick, highlightedNodeIds, incomingEdgeColor, ...nodeProps }: CustomNodeProps) => {
+  const clickTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clickCountRef = React.useRef(0);
+  
+  const handleNodeClickEvent = React.useCallback(
+    (event: React.MouseEvent<SVGGElement, MouseEvent>, data: NodeData) => {
+      event.stopPropagation();
+      
+      clickCountRef.current += 1;
+      
+      if (clickCountRef.current === 1) {
+        // First click - wait to see if there's a second click
+        clickTimerRef.current = setTimeout(() => {
+          // Single click confirmed
+          onNodeSingleClick?.(data);
+          clickCountRef.current = 0;
+        }, 250);
+      } else if (clickCountRef.current === 2) {
+        // Double click detected
+        if (clickTimerRef.current) {
+          clearTimeout(clickTimerRef.current);
+          clickTimerRef.current = null;
+        }
+        onNodeClick?.(data);
+        clickCountRef.current = 0;
+      }
     },
-    [onNodeClick]
+    [onNodeClick, onNodeSingleClick]
   );
 
-  const nodeId = (nodeProps.properties as NodeData).id;
+  React.useEffect(() => {
+    return () => {
+      if (clickTimerRef.current) {
+        clearTimeout(clickTimerRef.current);
+      }
+    };
+  }, []);
 
-  const handleToggleField = React.useCallback(
-    (fieldKey: string) => {
-      onToggleField?.(nodeId, fieldKey);
-    },
-    [nodeId, onToggleField]
-  );
+  const nodeData = nodeProps.properties as NodeData;
+  const isHighlighted = highlightedNodeIds?.has(nodeData.id) ?? false;
+  const evalStatus = getEvalStatus(nodeData);
 
-  const evalStatus = getEvalStatus(nodeProps.properties as NodeData);
-
+  // Highlight takes precedence over eval status for styling
   const fillStyle = evalStatus ? `var(--eval-${evalStatus}-fill)` : "var(--node-fill)";
-  const strokeStyle = evalStatus ? `var(--eval-${evalStatus}-stroke)` : "var(--node-stroke)";
-  const strokeWidth = evalStatus ? 2 : 1;
+  const strokeStyle = isHighlighted 
+    ? "#EF4444" 
+    : evalStatus 
+      ? `var(--eval-${evalStatus}-stroke)` 
+      : incomingEdgeColor ?? "var(--node-stroke)";
+  const strokeWidth = isHighlighted ? 3 : evalStatus ? 2 : 1;
 
   // innerRef points to our <g> inside reaflow's render.
   // reaflow renders: <g>[our <g>][rect]...</g>
@@ -65,19 +91,32 @@ const CustomNodeBase = ({ onNodeClick, collapsedFieldKeys, onToggleField, ...nod
     rect.style.fill = fillStyle;
     rect.style.stroke = strokeStyle;
     rect.style.strokeWidth = String(strokeWidth);
+
+    // Port clickers sit on top of our toggle buttons (same x/y position).
+    // Disable their pointer events so our buttons receive cursor & click correctly.
+    reaflowG?.querySelectorAll<SVGElement>('[class*="_clicker_1r6fw"]').forEach(el => {
+      el.style.pointerEvents = "none";
+    });
   });
 
   return (
     <Node
       {...nodeProps}
-      onClick={handleNodeClick as any}
+      onClick={handleNodeClickEvent as any}
       animated={false}
       label={null as any}
+      linkable={false}
       onEnter={event => {
         const rect = (event.currentTarget as SVGGElement).querySelector<SVGRectElement>("rect");
         if (rect) {
-          rect.style.stroke = evalStatus ? strokeStyle : "#3B82F6";
-          rect.style.strokeWidth = evalStatus ? String(strokeWidth) : "2";
+          // Don't change stroke on hover if already highlighted
+          if (isHighlighted) {
+            rect.style.stroke = strokeStyle;
+            rect.style.strokeWidth = String(strokeWidth);
+          } else {
+            rect.style.stroke = evalStatus ? strokeStyle : "#3B82F6";
+            rect.style.strokeWidth = evalStatus ? String(strokeWidth) : "2";
+          }
         }
       }}
       onLeave={event => {
@@ -101,61 +140,9 @@ const CustomNodeBase = ({ onNodeClick, collapsedFieldKeys, onToggleField, ...nod
           );
         }
 
-        // SVG collapse buttons — siblings of foreignObject, in SVG space
-        // x = width (right border center), y = row_center
-        const buttons = onToggleField
-          ? nodeData.text.map((row, rowIndex) => {
-              if (!row.key || !row.to?.length) return null;
-              const cy = rowIndex * ROW_HEIGHT + ROW_HEIGHT / 2;
-              const isCollapsed = collapsedFieldKeys?.has(row.key) ?? false;
-              return (
-                <g
-                  key={`btn-${rowIndex}`}
-                  transform={`translate(${width},${cy})`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleField(row.key!);
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <circle
-                    r={BTN_R}
-                    fill={fillStyle}
-                    stroke={row.portColor ?? strokeStyle}
-                    strokeWidth="2"
-                  />
-                  {/* − line */}
-                  <line
-                    x1={-(BTN_R - 3)} y1="0"
-                    x2={BTN_R - 3} y2="0"
-                    stroke={row.portColor ?? "var(--node-key)"}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                  {/* + vertical line (only when collapsed) */}
-                  {isCollapsed && (
-                    <line
-                      x1="0" y1={-(BTN_R - 3)}
-                      x2="0" y2={BTN_R - 3}
-                      stroke={row.portColor ?? "var(--node-key)"}
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  )}
-                </g>
-              );
-            })
-          : null;
-
         return (
           <g ref={innerRef}>
-            <ObjectNode
-              node={node as NodeData}
-              x={x}
-              y={y}
-              layoutWidth={width}
-            />
-            {buttons}
+            <ObjectNode node={node as NodeData} x={x} y={y} layoutWidth={width} />
           </g>
         );
       }}

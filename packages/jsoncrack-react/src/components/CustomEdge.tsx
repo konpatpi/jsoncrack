@@ -12,6 +12,7 @@ type CustomEdgeProps = EdgeProps & {
   viewPort: ViewPort | null;
   edgeTargetById: Map<string, string>;
   hostElement: QueryRoot | null;
+  highlightedEdgeIds?: Set<string>;
 };
 
 const isQueryRoot = (value: unknown): value is QueryRoot => {
@@ -23,10 +24,12 @@ const isQueryRoot = (value: unknown): value is QueryRoot => {
   );
 };
 
-const CustomEdgeBase = ({ viewPort, edgeTargetById, hostElement, ...props }: CustomEdgeProps) => {
+const CustomEdgeBase = ({ viewPort, edgeTargetById, hostElement, highlightedEdgeIds, ...props }: CustomEdgeProps) => {
   const [hovered, setHovered] = React.useState(false);
   const edgeId = (props.properties as EdgeData | undefined)?.id;
   const edgeColor = (props.properties as EdgeData | undefined)?.color;
+  
+  const isHighlighted = edgeId ? highlightedEdgeIds?.has(edgeId) ?? false : false;
 
   const handleClick = React.useCallback(() => {
     const targetNodeId = edgeId ? edgeTargetById.get(edgeId) : undefined;
@@ -57,9 +60,11 @@ const CustomEdgeBase = ({ viewPort, edgeTargetById, hostElement, ...props }: Cus
       onEnter={() => setHovered(true)}
       onLeave={() => setHovered(false)}
       style={{
-        stroke: hovered ? "#ffffff" : (edgeColor ?? "var(--edge-stroke)"),
-        strokeWidth: hovered ? 2 : 1.5,
-        opacity: hovered ? 1 : 0.85,
+        stroke: isHighlighted 
+          ? "#EF4444"
+          : (hovered ? "#ffffff" : (edgeColor ?? "var(--edge-stroke)")),
+        strokeWidth: isHighlighted ? 2.5 : (hovered ? 2 : 1.5),
+        opacity: isHighlighted ? 1 : (hovered ? 1 : 0.85),
       }}
       {...props}
     />
